@@ -1,0 +1,39 @@
+1) Account sessions:
+    We have a general salt for all applications.
+    A) We need to set up storage for accounts on the bank server
+        Bank:
+            blacklist of attempted (non-existing) account_numbers and associated attempted logins
+        Account Class:
+            account_holder
+            hash (hash(account_number and salt), PIN, app_salt)
+            salt
+            account_number (random int)
+            balance
+            unique server token
+            withdrawal_total
+            transfer_attempts
+            fail_counts
+    B) Figure out .card files        
+        .card file:
+            32-bit hash (account_number and salt)
+    C) Set up login
+        To send PIN, hash(card.hash, PIN, app_salt) = hash(hash(account_number and salt), PIN, app_salt)
+2) Transactions:
+    A) get_balance (ATM sends no input, Bank returns balance)
+    B) withdrawal (ATM sends amount (withdrawal_total <= 1000), Bank returns new balance)
+    C) transfer (ATM sends amount (!= 0), account_holder, Bank returns your balance)
+    
+    After every attempted login, whether it's a valid account_number or not, we let them attempt a transaction.
+    
+    However, if it's a bad login, they get an error message, the account_number fail_count goes up one and they
+    are forced to wait 10 seconds before another transaction. That fail_count is associated with the account if
+    the account_number is valid and with the entry on the blacklist if the account_number is invalid. 
+    
+Assignments for this week:
+    Kevin is going to implement the Account class and the blacklist.
+    Sam and Ben are going to work on transaction handling and recognition.
+    Jason - start looking at threading. You're the only one of us with any socket programming experience so see
+    if you can get some notion as to how to initialize multiple ATM's. Let us know about your thoughts on this.
+    
+*** Frequent commits, but never commit code that doesn't compile. Document all commits EXTREMELY
+    thoroughly (in-code comments as well as commit notes) ***
