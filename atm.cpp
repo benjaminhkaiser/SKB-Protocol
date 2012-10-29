@@ -18,7 +18,7 @@ using std::cout;
 using std::cin;
 using std::endl;
 
-//This reads in each character to be masked
+//Helper function for getpass() It reads in each character to be masked.
 int getch() {
     int ch;
     struct termios t_old, t_new;
@@ -34,39 +34,32 @@ int getch() {
     return ch;
 }
 
-/*
-    This function prints the string "PIN: " and gets the user entered
-    pin while replacing each character with '*'
-*/
-std::string getpass(const char *prompt, bool show_asterisk=true)
-{
-  const char BACKSPACE=127;
-  const char RETURN=10;
 
-  std::string password;
-  unsigned char ch=0;
+//This function prompts for and receives the user-entered PIN (masked with *'s)
+std::string getpass(const char *prompt, bool show_asterisk=true){
+    const char BACKSPACE=127;
+    const char RETURN=10;
 
-  cout << prompt;
-  //Consume previous newline
-  ch = getch();
-  while((ch=getch())!=RETURN)
-    {
-       if(ch==BACKSPACE)
-         {
-            if(password.length()!=0)
-              {
-                 if(show_asterisk)
-                 cout <<"\b \b";
-                 password.resize(password.length()-1);
-              }
-         }
-       else
-         {
-             password+=ch;
-             if(show_asterisk)
-                 cout <<'*';
-         }
-    }
+    std::string password;
+    unsigned char ch=0;
+
+    cout << prompt;
+    //Consume previous newline
+    ch = getch();
+    while((ch=getch())!=RETURN){
+        if(ch==BACKSPACE){
+            if(password.length()!=0){
+                if(show_asterisk)
+                    cout <<"\b \b";
+                password.resize(password.length()-1);
+            }
+        } //end if BACKSPACE
+        else{
+            password+=ch;
+            if(show_asterisk)
+                cout <<'*';
+        } //end else
+    } //end while
     
   return password;
 }
@@ -103,7 +96,6 @@ int main(int argc, char* argv[])
     }
     
     //input loop
-    //****************Should have boolean for successful login********************!
     char buf[80];
     while(1)
     {
@@ -113,16 +105,14 @@ int main(int argc, char* argv[])
         
         //TODO: your input parsing code has to put data here
         //Make sure to check buffer overflow
-        
-        //login [username]
-        
+               
         char packet[1024];
         int length = 1;
         
         //input parsing
         if(!strcmp(buf, "logout"))
             break;
-        else if(!strcmp(buf, "login")){    //test login functionality
+        else if(!strcmp(buf, "login")){    //if command is 'login'
             //this block prompts for 30 char username for login and puts it in the username var
             std::string username;
             cout << "user: ";
@@ -134,26 +124,22 @@ int main(int argc, char* argv[])
             pin = getpass("PIN: ", true);
             pin = pin.substr(0,4);
           
+            //This block takes the info the user input and puts it into a packet.
+            //The packet looks like: login[username][PIN]
             strcpy(packet,buf);
             for(unsigned int i = 0; i < username.length(); ++i)
-            {
-                packet[strlen(buf) + i] = username[i];
-            } //end for appened info to packet
+                packet[strlen(buf) + i] = username[i];  //add username to packet
             for(unsigned int i = 0; i < 4; ++i)
-            {
-                packet[strlen(buf) + username.length() + i] = pin[i];
-            } //end for append pin to packet
+                packet[strlen(buf) + username.length() + i] = pin[i];   //add pin to packet
+            
             //Add the terminating newline
-            packet[strlen(buf) + username.length() + 4] = '\0';
-            //printf(packet);
-           
+            packet[strlen(buf) + username.length() + 4] = '\0';         
         } //end else if login   
         
         //TODO: other commands
         
-        //send the packet through the proxy to the bank
+        //This block sends the message through the proxy to the bank. 
         //There are two send messages - 1) packet length and 2) actual packet
-        
         length = strlen(packet);
         if(sizeof(int) != send(sock, &length, sizeof(int), 0))
         {

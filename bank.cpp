@@ -83,7 +83,6 @@ void* client_thread(void* arg)
     {
         //read the packet from the ATM
         if(sizeof(int) != recv(csock, &length, sizeof(int), 0)){
-            printf("you're here");
             break;
         }
         if(length >= 1024)
@@ -96,7 +95,11 @@ void* client_thread(void* arg)
             printf("[bank] fail to read packet\n");
             break;
         }
+        
+        //Temporary code for debugging: print received packet
         printf(packet);
+        printf("\n");
+        
         //TODO: process packet data
         
         //TODO: put new data in packet
