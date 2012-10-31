@@ -1,0 +1,17 @@
+Jason: create card files and work on validating login (see last week's note for specifics)
+
+Sam: Implement other transactions on ATM and Bank-side
+
+Kevin: Finish cleaning up accounts
+
+Ben: Mutexes:
+        Account needs to have a mutex member variable.
+        When a login is successful, set the mutex.
+        When a transfer to account X is attempted, check the mutex before transferring. 
+        
+Algorithms:
+Hashing: SHA512
+Symmetric Encryption: AES
+Asymmetric Encryption: RSA
+
+Nonces need to be implemented yet. 
