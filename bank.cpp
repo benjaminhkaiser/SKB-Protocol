@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <pthread.h>
 #include <string.h>
+#include <account.h>
 
 void* client_thread(void* arg);
 void* console_thread(void* arg);

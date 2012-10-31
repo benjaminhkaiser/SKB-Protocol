@@ -1,4 +1,7 @@
+CC=g++
+CFLAGS=-I. -lcryptopp
+
 all:
-	g++ atm.cpp -m32 -o atm
-	g++ bank.cpp -m32 -o bank -lpthread
-	g++ proxy.cpp -m32 -o proxy -lpthread
+	$(CC) atm.cpp -m32 -o atm $(CFLAGS)
+	$(CC) bank.cpp account.cpp util.cpp -m32 -o bank -lpthread $(CFLAGS)
+	$(CC) proxy.cpp -m32 -o proxy -lpthread $(CFLAGS)

@@ -1,0 +1,194 @@
+#include <account.h>
+#include <string.h>
+#include <util.h>
+
+
+/*
+ * Constuct
+ */
+
+Account::Account()
+{
+	locked = true;
+	failsRemaining = 3;
+	transferAttemptsRemaining = 3;
+	withdrawLimitRemaining = 1000;
+	balance = 0;
+	accountNum = 0;
+	hash = "";
+}
+
+/*
+ * Transfer
+ */
+bool Account::tryTransfer(double funds, const Account* toAccount) const
+{
+	if(!tryWithdraw(funds))
+	{
+		return false;
+	}
+
+
+	if(!toAccount->tryDeposit(funds))
+	{
+		return false;
+	}
+
+	return true;
+}
+double Account::Transfer(double funds, Account* toAccount)
+{
+	if(funds == 0)
+	{
+		return this->balance;
+	}
+
+	if(tryTransfer(funds, toAccount))
+	{
+		Withdraw(funds);
+		toAccount->Deposit(funds);
+	}
+
+	return this->balance;
+}
+
+/*
+ * Withdraw
+ */
+
+bool Account::tryWithdraw(double funds) const
+{
+	if(funds < 0)
+	{
+		return false;
+	}
+
+	//You cannot exceed your withdrawal limit
+	if(funds > this->withdrawLimitRemaining)
+	{
+		return false;
+	}
+
+	//Let's not overflow now!
+	if(doubleOverflow(funds*-1,this->balance))
+	{
+		return false;
+	}
+
+	//We don't allow overdraft
+	if(this->balance - funds < 0)
+	{
+		return false;
+	}
+
+	return true;
+}
+
+double Account::Withdraw(double funds)
+{
+	if(tryWithdraw(funds))
+	{
+		this->balance -= funds;
+	}
+
+	return this->balance;
+}
+
+/*
+ * Deposit
+ */
+
+bool Account::tryDeposit(double funds) const
+{
+	if(funds < 0)
+	{
+		return false;
+	}
+
+	if(!doubleOverflow(funds,this->balance))
+	{
+		return true;
+	} else {
+		return false;
+	}
+}
+double Account::Deposit(double funds)
+{
+	if(tryDeposit(funds))
+	{
+		this->balance += funds;
+
+	}
+	return this->balance;
+}
+
+
+/*
+ * Other functions
+ */
+
+bool Account::createAccount(const std::string& accountHolder, const int& accountNum, const std::string& pin, const std::string& appSalt)
+{
+	this->accountHolder = accountHolder;
+	this->accountNum = accountNum;
+
+	this->salt = makeHash(randomString(128));
+
+	std::string card = makeHash(to_string(this->accountNum) + salt);
+
+	//If you successfully set the pin then the account can be unlocked for use.
+	if(setPIN(pin, appSalt))
+	{
+		locked = false;
+	} else {
+		locked = true;
+	}
+}
+
+bool Account::setPIN(const std::string& pin, const std::string& appSalt)
+{
+	//require pin length of 6
+	if(pin.length() != 6)
+	{
+		return false;
+	}
+
+	std::string hash = makeHash(this->card + pin + appSalt);
+
+	//verify that hash was actually created
+	if(hash.length() > 0)
+	{
+		this->hash = hash;
+		return true;
+	} else {
+		return false;
+	}
+}
+
+bool Account::tryLogin(const std::string& pin, const std::string& appSalt)
+{
+	if(this->locked)
+	{
+		return false;
+	}
+
+	std::string attemptedHash = makeHash(this->card + pin + appSalt);
+
+	if(this->hash == attemptedHash)
+	{
+		return true;
+	} else {
+		registerFail();
+		return false;
+	}
+}
+
+void Account::registerFail()
+{
+	if(failsRemaining > 1)
+	{
+		this->failsRemaining -= 1;
+	} else {
+		this->locked = true;
+	}
+}
