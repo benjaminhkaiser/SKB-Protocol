@@ -2,8 +2,8 @@
 #include <string>
 #include <sstream>
 #include <limits>
-#include <cryptopp/sha.h>
-#include <cryptopp/hex.h>
+#include "includes/cryptopp/sha.h"
+#include "includes/cryptopp/hex.h"
 
 std::string makeHash(const std::string& input)
 {

@@ -28,6 +28,7 @@ int main(int argc, char* argv[])
 	
 	//socket setup
 	int lsock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+
 	if(!lsock)
 	{
 		printf("fail to create socket\n");
@@ -70,9 +71,9 @@ int main(int argc, char* argv[])
 
 void* client_thread(void* arg)
 {
-	int csock = (int)arg;
+	long int csock = (long int)arg;
 	
-	printf("[proxy] client ID #%d connected\n", csock);
+	printf("[proxy] client ID #%ld connected\n", csock);
 	
 	//create a new socket and connect to the bank
 	int bsock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -162,7 +163,7 @@ void* client_thread(void* arg)
 
 	}
 
-	printf("[proxy] client ID #%d disconnected\n", csock);
+	printf("[proxy] client ID #%ld disconnected\n", csock);
 		
 	close(bsock);
 	close(csock);

@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <pthread.h>
 #include <string.h>
-#include <account.h>
+#include "account.h"
 
 void* client_thread(void* arg);
 void* console_thread(void* arg);
@@ -28,6 +28,7 @@ int main(int argc, char* argv[])
     
     //socket setup
     int lsock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    printf("asd");
     if(!lsock)
     {
         printf("fail to create socket\n");
@@ -73,9 +74,9 @@ int main(int argc, char* argv[])
 
 void* client_thread(void* arg)
 {
-    int csock = (int)arg;
+    long int csock = (long int)arg;
     
-    printf("[bank] client ID #%d connected\n", csock);
+    printf("[bank] client ID #%ld connected\n", csock);
     
     //input loop
     int length;
@@ -98,7 +99,7 @@ void* client_thread(void* arg)
         }
         
         //Temporary code for debugging: print received packet
-        printf(packet);
+        printf("%s", packet);
         printf("\n");
         
         //TODO: process packet data
@@ -119,7 +120,7 @@ void* client_thread(void* arg)
 
     }
 
-    printf("[bank] client ID #%d disconnected\n", csock);
+    printf("[bank] client ID #%ld disconnected\n", csock);
 
     close(csock);
     return NULL;
