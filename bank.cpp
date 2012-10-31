@@ -28,7 +28,6 @@ int main(int argc, char* argv[])
     
     //socket setup
     int lsock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    printf("asd");
     if(!lsock)
     {
         printf("fail to create socket\n");
