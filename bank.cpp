@@ -82,6 +82,7 @@ void* client_thread(void* arg)
     char packet[1024];
     while(1)
     {
+        packet[0] = '\0';
         //read the packet from the ATM
         if(sizeof(int) != recv(csock, &length, sizeof(int), 0)){
             break;
@@ -116,7 +117,6 @@ void* client_thread(void* arg)
             printf("[bank] fail to send packet\n");
             break;
         }
-
     }
 
     printf("[bank] client ID #%ld disconnected\n", csock);

@@ -10,8 +10,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <fstream>
+#include <streambuf>
 #include <iostream>
 #include <string>
+#include <vector>
+#include <sstream>
+#include <iterator>
 #include <termios.h>
 
 using std::cout;
@@ -34,6 +39,17 @@ int getch() {
     return ch;
 }
 
+// This function returns a vector of strings, which is the prompt split by the delim.
+std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems) 
+{
+    std::stringstream ss(s+' ');
+    std::string item;
+    while(std::getline(ss, item, delim)) 
+    {
+        elems.push_back(item);
+    }
+    return elems;
+}
 
 //This function prompts for and receives the user-entered PIN (masked with *'s)
 std::string getpass(const char *prompt, bool show_asterisk=true){
@@ -44,8 +60,6 @@ std::string getpass(const char *prompt, bool show_asterisk=true){
     unsigned char ch=0;
 
     cout << prompt;
-    //Consume previous newline
-    ch = getch();
     while((ch=getch())!=RETURN){
         if(ch==BACKSPACE){
             if(password.length()!=0){
@@ -60,7 +74,9 @@ std::string getpass(const char *prompt, bool show_asterisk=true){
                 cout <<'*';
         } //end else
     } //end while
-    
+
+  printf("\n");
+  
   return password;
 }
 
@@ -95,79 +111,145 @@ int main(int argc, char* argv[])
         return -1;
     }
     
-    //input loop
-    char buf[80];
+    //input loop   
     while(1)
     {
+        char buf[80];
+        char packet[1024];
+        int length;
+        int sendPacket = 0;
+        std::vector<std::string> bufArray;
+
+        // clean up last packet and buffer
+        buf[0] = '\0';
+        packet[0] = '\0';
+
+        // Print the prompt
         printf("atm> ");
         fgets(buf, 79, stdin);
         buf[strlen(buf)-1] = '\0';  //trim off trailing newline
         
-        //TODO: your input parsing code has to put data here
-        //Make sure to check buffer overflow
-               
-        char packet[1024];
-        int length = 1;
-        
+        // Parse data
+        bufArray = split((std::string) buf, ' ', bufArray);
+
         //input parsing
-        if(!strcmp(buf, "logout"))
-            break;
-        else if(!strcmp(buf, "login")){    //if command is 'login'
-            //this block prompts for 30 char username for login and puts it in the username var
-            std::string username;
-            cout << "user: ";
-            cin >> username;
-            username = username.substr(0,30);
+        if(bufArray.size() >= 1 && ((std::string) "") != bufArray[0])
+        {
+            std::string command = bufArray[0];
+                
+            // There exists a command, check the command
+            if(!strcmp(buf, "logout"))
+            {   
+                sendPacket = 1; // Send packet because valid command
+                break;
+            }
+            else if(((std::string) "login") == command) //if command is 'login'
+            {   
+                //this block prompts for 30 char username for login and puts it in the username var
+                // Continue as long as there is only one argument.
+                if(bufArray.size() == 2)
+                {
+                    //limit username to 30 chars
+                    std::string username = bufArray[1].substr(0,30);
+                    std::ifstream cardFile(("cards/" + username + ".card").c_str());
+                    if(cardFile)
+                    {
+                        sendPacket = 1; // Send packet because valid command
+
+                        //obtain card hash
+                        std::string cardHash((std::istreambuf_iterator<char>(cardFile)),std::istreambuf_iterator<char>());
+                        cardHash = cardHash.substr(0,32);
+                        cout << "Card: " << cardHash << '\n';
+
+                        //this block prompts for PIN for login and puts it in the pin var
+                        std::string pin;
+                        pin = getpass("PIN: ", true);
+                        pin = pin.substr(0,6);
+                      
+                        //This block takes the info the user input and puts it into a packet.
+                        //The packet looks like: login,[username],[username.card account hash],[PIN]
+                        strcpy(packet,command.c_str());
+                        packet[command.length()] = ',';
+                        
+                        for(unsigned int i = 0; i < username.length(); ++i)
+                        {
+                            packet[command.length() + 1 + i] = username[i];  //add username to packet
+                        }
+                            packet[command.length() + 1 + username.length()] = ',';
+                        
+                        for(unsigned int i = 0; i < cardHash.length(); ++i)
+                        {
+                            packet[command.length() + 1 + username.length() + 1 + i] = cardHash[i];   //add card hash to packet
+                        }
+                            packet[command.length() + 1 + username.length() + 1 + cardHash.length()] = ',';
+                        
+                        for(unsigned int i = 0; i < pin.length(); ++i)
+                        {
+                            packet[command.length() + 1 + username.length() + 1 + cardHash.length() + 1 + i] = pin[i];   //add pin to packet
+                        }
+                        
+                        //Add the terminating newline
+                            packet[command.length() + 1 + username.length() + 1 + cardHash.length() + 1 + pin.length()] = '\0';
+
+                    }
+                    else
+                    {
+                        cout << "ATM Card not found.\n";
+                    }
+
+                }
+                else
+                {
+                    cout << "Usage: login [username]\n";
+                }
+            } 
+
+            //TODO: other commands
             
-            //this block prompts for PIN for login and puts it in the pin var
-            std::string pin;
-            pin = getpass("PIN: ", true);
-            pin = pin.substr(0,4);
-          
-            //This block takes the info the user input and puts it into a packet.
-            //The packet looks like: login[username][PIN]
-            strcpy(packet,buf);
-            for(unsigned int i = 0; i < username.length(); ++i)
-                packet[strlen(buf) + i] = username[i];  //add username to packet
-            for(unsigned int i = 0; i < 4; ++i)
-                packet[strlen(buf) + username.length() + i] = pin[i];   //add pin to packet
-            
-            //Add the terminating newline
-            packet[strlen(buf) + username.length() + 4] = '\0';         
-        } //end else if login   
-        
-        //TODO: other commands
-        
-        //This block sends the message through the proxy to the bank. 
-        //There are two send messages - 1) packet length and 2) actual packet
-        length = strlen(packet);
-        if(sizeof(int) != send(sock, &length, sizeof(int), 0))
-        {
-            printf("fail to send packet length\n");
-            break;
+            else
+            {
+                cout << "Command '" << command << "' not recognized.\n";
+            }
+
+            if(sendPacket)
+            {
+                //This block sends the message through the proxy to the bank. 
+                //There are two send messages - 1) packet length and 2) actual packet
+                length = strlen(packet);
+                cout << "Plen: " << length << endl;
+                if(sizeof(int) != send(sock, &length, sizeof(int), 0))
+                {
+                    printf("fail to send packet length\n");
+                    break;
+                }
+                if(length != send(sock, (void*)packet, length, 0))
+                {
+                    printf("fail to send packet\n");
+                    break;
+                }
+                
+                //TODO: do something with response packet
+                if(sizeof(int) != recv(sock, &length, sizeof(int), 0))
+                {
+                    printf("fail to read packet length\n");
+                    break;
+                }
+                if(length >= 1024)
+                {
+                    printf("packet too long\n");
+                    break;
+                }
+                if(length != recv(sock, packet, length, 0))
+                {
+                    printf("fail to read packet\n");
+                    break;
+                }
+            }
         }
-        if(length != send(sock, (void*)packet, length, 0))
+        else
         {
-            printf("fail to send packet\n");
-            break;
-        }
-        
-        //TODO: do something with response packet
-        if(sizeof(int) != recv(sock, &length, sizeof(int), 0))
-        {
-            printf("fail to read packet length\n");
-            break;
-        }
-        if(length >= 1024)
-        {
-            printf("packet too long\n");
-            break;
-        }
-        if(length != recv(sock, packet, length, 0))
-        {
-            printf("fail to read packet\n");
-            break;
-        }
+            cout << "Usage: [command] [+argument]\n";
+        } 
     }
     
     //cleanup
