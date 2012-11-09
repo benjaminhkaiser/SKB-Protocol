@@ -12,6 +12,8 @@
 #include <pthread.h>
 #include <string.h>
 #include "account.h"
+#include "bank.h"
+#include "util.h"
 
 void* client_thread(void* arg);
 void* console_thread(void* arg);
@@ -36,6 +38,7 @@ int main(int argc, char* argv[])
     
     //listening address
     sockaddr_in addr_l;
+    memset(&addr_l,0,sizeof(addr_l));
     addr_l.sin_family = AF_INET;
     addr_l.sin_port = htons(ourport);
     unsigned char* ipaddr = reinterpret_cast<unsigned char*>(&addr_l.sin_addr);
@@ -53,10 +56,18 @@ int main(int argc, char* argv[])
         printf("failed to listen on socket\n");
         return -1;
     }
+
+    //Create the bank
+    Bank* bank = new Bank();
+
+    //Create the structs to help move data around
+    BankSocketThread* bankSocketThread = new BankSocketThread();
+    bankSocketThread->bank = bank;
+    bank->appSalt = "THISISASUPERSECUREAPPWIDESALT";
     
     pthread_t cthread;
-    pthread_create(&cthread, NULL, console_thread, NULL);
-    
+    pthread_create(&cthread, NULL, console_thread, (void*)bankSocketThread);
+
     //loop forever accepting new connections
     while(1)
     {
@@ -65,15 +76,18 @@ int main(int argc, char* argv[])
         int csock = accept(lsock, reinterpret_cast<sockaddr*>(&unused), &size);
         if(csock < 0)   //bad client, skip it
             continue;
-            
+        bankSocketThread->csock = &csock;
         pthread_t thread;
-        pthread_create(&thread, NULL, client_thread, (void*)csock);
+        pthread_create(&thread, NULL, client_thread, (void*)bankSocketThread);
     }
+    delete bank;
+    delete bankSocketThread;
 }
 
 void* client_thread(void* arg)
 {
-    long int csock = (long int)arg;
+    BankSocketThread* bankSocketThread = (BankSocketThread*) arg;
+    long int csock = (long int)*(bankSocketThread->csock);
     
     printf("[bank] client ID #%ld connected\n", csock);
     
@@ -127,13 +141,125 @@ void* client_thread(void* arg)
 
 void* console_thread(void* arg)
 {
+    BankSocketThread* bankSocketThread = (BankSocketThread*) arg;
+    Bank* bank = bankSocketThread->bank;
+
+    //Create Accounts
+    Account* new_account = new Account();
+
+    //Alice
+    new_account->createAccount(std::string("Alice"), 1, std::string("123456"), bank->appSalt);
+    new_account->Deposit(100);
+    bank->addAccount(new_account);
+
+    //Bob
+    new_account = new Account();
+    new_account->createAccount(std::string("Bob"), 1, std::string("234567"), bank->appSalt);
+    new_account->Deposit(50);
+    bank->addAccount(new_account);
+
+    //Eve
+    new_account = new Account();
+    new_account->createAccount(std::string("Eve"), 1, std::string("234567"), bank->appSalt);
+    new_account->Deposit(0);
+    bank->addAccount(new_account);
+
     char buf[80];
     while(1)
     {
         printf("bank> ");
         fgets(buf, 79, stdin);
         buf[strlen(buf)-1] = '\0';  //trim off trailing newline
+
+        std::vector<std::string> tokens;
+        split(buf,tokens,' ');
+
+        if(tokens.size() <= 0)
+        {
+            printf("Invalid input\n");
+            continue;
+        }
+        printf("%s of size: %d\n", tokens[1].c_str(), (int)tokens[1].size());
+        if(tokens[0] == "balance")
+        {
+            if(tokens.size() != 2)
+            {
+                printf("Invalid input\n");
+                continue;
+            }
+
+            Account* current_account = bank->getAccountByName(tokens[1]);
+            if(!current_account)
+            {
+                printf("Invalid account\n");
+                continue;
+            }
+            printf("Balance: %f\n", current_account->getBalance());
+            continue;
+        }
+
+        if(tokens[0] == "deposit")
+        {
+            if(tokens.size() != 3)
+            {
+                printf("Invalid input\n");
+                continue;
+            }
+
+            double amount = atof(tokens[2].c_str());
+
+            if(amount <= 0)
+            {
+                printf("Invalid amount\n");
+                continue;
+            }
+
+            Account* current_account = bank->getAccountByName(tokens[1]);
+            if(!current_account)
+            {
+                printf("Invalid account\n");
+                continue;
+            }
+
+            if(!current_account->tryDeposit(amount))
+            {
+                printf("Invalid amount\n");
+                continue;
+            }
+
+            double cur_balance = current_account->Deposit(amount);
+
+            printf("Money deposited!\nNew balance: %f\n", cur_balance);
+            continue;
+        }
+
+        //printf("%s", buf);
+        //printf("\n");
         
-        //TODO: your input parsing code has to go here
+    }
+}
+
+void Bank::addAccount(Account* account)
+{
+    this->accounts.push_back(account);
+}
+
+Account* Bank::getAccountByName(const std::string& username)
+{
+    for(unsigned int i = 0; i < this->accounts.size(); ++i)
+    {
+        if(this->accounts[i]->getAccountHolder() == username)
+        {
+            return this->accounts[i];
+        }
+    }
+    return 0;
+}
+
+Bank::~Bank()
+{
+    for(unsigned int i = 0; i < this->accounts.size(); ++i)
+    {
+        delete this->accounts[i];
     }
 }

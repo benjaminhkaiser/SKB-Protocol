@@ -1,5 +1,6 @@
 #include "account.h"
 #include <string.h>
+#include <fstream>
 #include <util.h>
 
 
@@ -129,12 +130,31 @@ double Account::Deposit(double funds)
 
 bool Account::createAccount(const std::string& accountHolder, const int& accountNum, const std::string& pin, const std::string& appSalt)
 {
+	if(accountHolder == "")
+	{
+		return false;
+	}
 	this->accountHolder = accountHolder;
+	if(accountNum <= 0)
+	{
+		return false;
+	}
 	this->accountNum = accountNum;
 
 	this->salt = makeHash(randomString(128));
 
 	std::string card = makeHash(to_string(this->accountNum) + salt);
+
+	std::ofstream outfile;
+
+	std::string cardFile = "cards/" + this->accountHolder + ".card";
+
+	outfile.open (cardFile.c_str(), std::ios_base::out|std::ios_base::trunc);
+	if(outfile.is_open())
+	{
+		outfile << card;
+	}
+	outfile.close();
 
 	//If you successfully set the pin then the account can be unlocked for use.
 	if(setPIN(pin, appSalt))
@@ -143,12 +163,14 @@ bool Account::createAccount(const std::string& accountHolder, const int& account
 	} else {
 		locked = true;
 	}
+
+	return true;
 }
 
 bool Account::setPIN(const std::string& pin, const std::string& appSalt)
 {
-	//require pin length of 6
-	if(pin.length() != 6)
+	//require pin length of at least 6 but no more than 32
+	if(pin.length() < 6 || pin.length() > 32)
 	{
 		return false;
 	}

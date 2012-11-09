@@ -22,6 +22,8 @@ public:
 	double Deposit(double funds);
 
 	//Other functions
+	const double getBalance(){ return this->balance; }
+	const std::string getAccountHolder(){ return this->accountHolder; }
 	bool setPIN(const std::string& pin, const std::string& appSalt);
 	bool createAccount(const std::string& accountHolder, const int& accountNum, const std::string& pin, const std::string& appSalt);
 	bool tryLogin(const std::string& pin, const std::string& appSalt);

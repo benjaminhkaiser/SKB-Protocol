@@ -98,6 +98,7 @@ int main(int argc, char* argv[])
         return -1;
     }
     sockaddr_in addr;
+    memset(&addr,0,sizeof(addr));
     addr.sin_family = AF_INET;
     addr.sin_port = htons(proxport);
     unsigned char* ipaddr = reinterpret_cast<unsigned char*>(&addr.sin_addr);

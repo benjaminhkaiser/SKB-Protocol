@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <pthread.h>
 #include <string.h>
+#include <errno.h>
 
 void* client_thread(void* arg);
 
@@ -37,6 +38,7 @@ int main(int argc, char* argv[])
 	
 	//listening address
 	sockaddr_in addr_l;
+	memset(&addr_l,0,sizeof(addr_l));
 	addr_l.sin_family = AF_INET;
 	addr_l.sin_port = htons(ourport);
 	unsigned char* ipaddr = reinterpret_cast<unsigned char*>(&addr_l.sin_addr);
@@ -44,6 +46,7 @@ int main(int argc, char* argv[])
 	ipaddr[1] = 0;
 	ipaddr[2] = 0;
 	ipaddr[3] = 1;
+
 	if(0 != bind(lsock, reinterpret_cast<sockaddr*>(&addr_l), sizeof(addr_l)))
 	{
 		printf("failed to bind socket\n");
