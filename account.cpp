@@ -2,7 +2,7 @@
 #include <string.h>
 #include <fstream>
 #include <util.h>
-
+#include <iostream>
 
 /*
  * Constuct
@@ -151,12 +151,18 @@ bool Account::createAccount(const std::string& accountHolder, const int& account
 
 	std::string cardFile = "cards/" + this->accountHolder + ".card";
 
-	outfile.open (cardFile.c_str(), std::ios_base::out|std::ios_base::trunc);
-	if(outfile.is_open())
+	std::ofstream file_out(cardFile.c_str());
+	if(file_out.is_open())
 	{
-		outfile << card;
-	}
-	outfile.close();
+		file_out << card;
+	} //end if valid outfstream
+	file_out.close();
+	//outfile.open (cardFile.c_str(), std::ios_base::out|std::ios_base::trunc);
+	//if(outfile.is_open())
+	//{
+	//	outfile << card;
+	//}
+	//outfile.close();
 
 	//If you successfully set the pin then the account can be unlocked for use.
 	if(setPIN(pin, appSalt))

@@ -92,6 +92,14 @@ void buildPacket(char* packet, std::string command)
 {
 	packet[0] = '\0';
     //Build out nonce here
-    strcpy(packet, (command + '\0').c_str());
-    packet[command.size()] = '\0';
+	//
+	
+	//Check if command overflows
+	//change 1023 to variable amount based on nonce once implemented
+	if(command.size() < 1023)
+	{
+    	strcpy(packet, (command + '\0').c_str());
+    	packet[command.size()] = '\0';
+	} //end if command does not overflow
+
 }
