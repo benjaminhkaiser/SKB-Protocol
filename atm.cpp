@@ -24,6 +24,8 @@ using std::cout;
 using std::cin;
 using std::endl;
 
+void buildPacket(char* packet, std::string command);
+
 //Helper function for getpass() It reads in each character to be masked.
 int getch() {
     int ch;
@@ -177,29 +179,8 @@ int main(int argc, char* argv[])
                       
                         //This block takes the info the user input and puts it into a packet.
                         //The packet looks like: login,[username],[username.card account hash],[PIN]
-                        strcpy(packet,(command + ',' + accountHash + '\0').c_str());
-                        /*packet[command.length()] = ',';
-                        
-                        for(unsigned int i = 0; i < username.length(); ++i)
-                        {
-                            packet[command.length() + 1 + i] = username[i];  //add username to packet
-                        }
-                            packet[command.length() + 1 + username.length()] = ',';
-                        
-                        for(unsigned int i = 0; i < cardHash.length(); ++i)
-                        {
-                            packet[command.length() + 1 + username.length() + 1 + i] = cardHash[i];   //add card hash to packet
-                        }
-                            packet[command.length() + 1 + username.length() + 1 + cardHash.length()] = ',';
-                        
-                        for(unsigned int i = 0; i < pin.length(); ++i)
-                        {
-                            packet[command.length() + 1 + username.length() + 1 + cardHash.length() + 1 + i] = pin[i];   //add pin to packet
-                        }
-                        
-                        //Add the terminating newline
-                        packet[command.length() + 1 + username.length() + 1 + cardHash.length() + 1 + pin.length()] = '\0';*/
-
+                        buildPacket(packet,std::string(command + ',' + accountHash + '\0'));
+                        //strcpy(packet,(command + ',' + accountHash + '\0').c_str());
                     }
                     else
                     {
@@ -264,4 +245,10 @@ int main(int argc, char* argv[])
     //cleanup
     close(sock);
     return 0;
+}
+
+void buildPacket(char* packet, std::string command)
+{
+    //Build out nonce here
+    strcpy(packet, command.c_str());
 }
