@@ -6,3 +6,16 @@ Ex(L | Na | H(Na + Nb))												---->		Dx(M) -> validateNonce() -> validateLo
 Dx(L | Nb) -> validateNonce() ->  == "I Got that"					<----		generateNb() -> Ex(M | Nb | H(Na + Nb))	
 generateNa() -> M = command -> Ex(M | Na | H(Na + Nb))				---->		Dx(M) -> validateNonce() -> executeCommand() & return r
 Dx(L | Nb) & act on return											<----		generateNb() -> Ex(r | Nb | H(Na + Nb))	& kill session
+
+
+
+States:
+0: ATM need to request initial nonce from the bank.. this will also let the two handshake.
+1: Bank sends back a nonce
+2: ATM sends login information
+3: Bank sends an ACK
+4: ATM sends a valid command for the bank
+5: Bank replies with the response to command or the generic error message
+
+After 5 both go to state 0.
+At any point Bank can send a kill session to ATM. This needs to be handled by ending the current transaction and going back to state 0.
