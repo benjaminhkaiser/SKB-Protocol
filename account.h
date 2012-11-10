@@ -27,6 +27,7 @@ public:
 	bool setPIN(const std::string& pin, const std::string& appSalt);
 	bool createAccount(const std::string& accountHolder, const int& accountNum, const std::string& pin, const std::string& appSalt);
 	bool tryLogin(const std::string& pin, const std::string& appSalt);
+	bool tryHash(const std::string& attemptedHash);
 private:
 	std::string hash;
 	std::string accountHolder;

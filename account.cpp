@@ -205,6 +205,21 @@ bool Account::tryLogin(const std::string& pin, const std::string& appSalt)
 	}
 }
 
+bool Account::tryHash(const std::string& attemptedHash)
+{
+	if(this->locked)
+	{
+		return false;
+	}
+	if(this->hash == attemptedHash)
+	{
+		return true;
+	} else {
+		registerFail();
+		return false;
+	}	
+}
+
 void Account::registerFail()
 {
 	if(failsRemaining > 1)
