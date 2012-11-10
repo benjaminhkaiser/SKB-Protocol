@@ -135,6 +135,8 @@ int main(int argc, char* argv[])
         printf("atm> ");
         fgets(buf, 79, stdin);
         buf[strlen(buf)-1] = '\0';  //trim off trailing newline
+
+        //TODO: We need to get a nonce from the server.. and make sure the server is who we think it is
         
         // Parse data
         bufArray = split((std::string) buf, ' ', bufArray);
