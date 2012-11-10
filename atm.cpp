@@ -42,18 +42,6 @@ int getch() {
     return ch;
 }
 
-// This function returns a vector of strings, which is the prompt split by the delim.
-std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems) 
-{
-    std::stringstream ss(s+' ');
-    std::string item;
-    while(std::getline(ss, item, delim)) 
-    {
-        elems.push_back(item);
-    }
-    return elems;
-}
-
 //This function prompts for and receives the user-entered PIN (masked with *'s)
 std::string getpass(const char *prompt, bool show_asterisk=true){
     const char BACKSPACE=127;
@@ -139,7 +127,7 @@ int main(int argc, char* argv[])
         //TODO: We need to get a nonce from the server.. and make sure the server is who we think it is
         
         // Parse data
-        bufArray = split((std::string) buf, ' ', bufArray);
+        split((std::string) buf, ' ', bufArray);
 
         //input parsing
         if(bufArray.size() >= 1 && ((std::string) "") != bufArray[0])

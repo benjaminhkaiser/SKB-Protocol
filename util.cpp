@@ -69,22 +69,14 @@ bool doubleOverflow(const double& x, const double& y)
 	}
 }
 
-unsigned int split(const std::string &txt, std::vector<std::string> &strs, char ch)
+// This function returns a vector of strings, which is the prompt split by the delim.
+int split(const std::string &s, char delim, std::vector<std::string> &elems) 
 {
-    unsigned int pos = txt.find( ch );
-    unsigned int initialPos = 0;
-    strs.clear();
-
-    // Decompose statement
-    while( pos != std::string::npos ) {
-        strs.push_back( txt.substr( initialPos, pos - initialPos  ) );
-        initialPos = pos + 1;
-
-        pos = txt.find( ch, initialPos );
+    std::stringstream ss(s+' ');
+    std::string item;
+    while(std::getline(ss, item, delim)) 
+    {
+        elems.push_back(item);
     }
-
-    // Add the last one
-    strs.push_back( txt.substr( initialPos, std::min( pos, (unsigned int)txt.size() ) - initialPos  ) );
-
-    return strs.size();
+    return elems.size();
 }

@@ -148,7 +148,7 @@ void* console_thread(void* arg)
     Account* new_account = new Account();
 
     //Alice
-    new_account->createAccount(std::string("Alice"), 1, std::string("123456"), bank->appSalt);
+    new_account->createAccount(std::string("Aice"), 1, std::string("123456"), bank->appSalt);
     new_account->Deposit(100);
     bank->addAccount(new_account);
 
@@ -172,7 +172,7 @@ void* console_thread(void* arg)
         buf[strlen(buf)-1] = '\0';  //trim off trailing newline
 
         std::vector<std::string> tokens;
-        split(buf,tokens,' ');
+        split(buf,' ',tokens);
 
         if(tokens.size() <= 0)
         {
