@@ -18,6 +18,7 @@
 #include <sstream>
 #include <iterator>
 #include <termios.h>
+#include "util.h"
 
 using std::cout;
 using std::cin;
@@ -88,7 +89,10 @@ int main(int argc, char* argv[])
         printf("Usage: atm proxy-port\n");
         return -1;
     }
-    
+ 
+    //Set the appSalt
+    const std::string appSalt = "THISISASUPERSECUREAPPWIDESALT";
+
     //socket setup
     unsigned short proxport = atoi(argv[1]);
     int sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -165,12 +169,16 @@ int main(int argc, char* argv[])
                         //this block prompts for PIN for login and puts it in the pin var
                         std::string pin;
                         pin = getpass("PIN: ", true);
+                        //Pin is limited to 6 characters
                         pin = pin.substr(0,6);
+
+                        //Now we'll figure out the hash that we need to send
+                        std::string accountHash = makeHash(cardHash + pin + appSalt);
                       
                         //This block takes the info the user input and puts it into a packet.
                         //The packet looks like: login,[username],[username.card account hash],[PIN]
-                        strcpy(packet,command.c_str());
-                        packet[command.length()] = ',';
+                        strcpy(packet,(command + ',' + accountHash + '\0').c_str());
+                        /*packet[command.length()] = ',';
                         
                         for(unsigned int i = 0; i < username.length(); ++i)
                         {
@@ -190,7 +198,7 @@ int main(int argc, char* argv[])
                         }
                         
                         //Add the terminating newline
-                        packet[command.length() + 1 + username.length() + 1 + cardHash.length() + 1 + pin.length()] = '\0';
+                        packet[command.length() + 1 + username.length() + 1 + cardHash.length() + 1 + pin.length()] = '\0';*/
 
                     }
                     else
