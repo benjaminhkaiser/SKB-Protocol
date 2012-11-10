@@ -30,6 +30,13 @@ std::string to_string(int number)
    return ss.str();
 }
 
+std::string to_string(double number)
+{
+   std::stringstream ss;
+   ss << number;
+   return ss.str();
+}
+
 std::string randomString(const int len)
 {
     static const char alphanum[] =
@@ -72,11 +79,19 @@ bool doubleOverflow(const double& x, const double& y)
 // This function returns a vector of strings, which is the prompt split by the delim.
 int split(const std::string &s, char delim, std::vector<std::string> &elems) 
 {
-    std::stringstream ss(s+' ');
+    std::stringstream ss(s);
     std::string item;
     while(std::getline(ss, item, delim)) 
     {
         elems.push_back(item);
     }
     return elems.size();
+}
+
+void buildPacket(char* packet, std::string command)
+{
+	packet[0] = '\0';
+    //Build out nonce here
+    strcpy(packet, (command + '\0').c_str());
+    packet[command.size()] = '\0';
 }

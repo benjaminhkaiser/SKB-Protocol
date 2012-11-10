@@ -87,6 +87,10 @@ int main(int argc, char* argv[])
 void* client_thread(void* arg)
 {
     BankSocketThread* bankSocketThread = (BankSocketThread*) arg;
+    Bank* bank = bankSocketThread->bank;
+    BankSession* bankSession = new BankSession();
+    bankSession->state = 2;
+
     long int csock = (long int)*(bankSocketThread->csock);
     
     printf("[bank] client ID #%ld connected\n", csock);
@@ -94,8 +98,12 @@ void* client_thread(void* arg)
     //input loop
     int length;
     char packet[1024];
+    bool sendPacket = false;
+    std::vector<std::string> tokens;
     while(1)
     {
+        sendPacket = false;
+        tokens.clear();
         packet[0] = '\0';
         //read the packet from the ATM
         if(sizeof(int) != recv(csock, &length, sizeof(int), 0)){
@@ -111,31 +119,88 @@ void* client_thread(void* arg)
             printf("[bank] fail to read packet\n");
             break;
         }
+        packet[length] = '\0';
         
         //Temporary code for debugging: print received packet
         printf("%s", packet);
         printf("\n");
+
+        //Parse the packet
+        //std::string strPacket = packet;
+        split(std::string(packet),',', tokens);
+
+        //We should get something, if not ignore this packet
+        if(tokens.size() < 1)
+        {
+            continue;
+        }
+        //Now we're compare what we go to what state we expect to be in
+        switch(bankSession->state)
+        {
+            //We're not doing nonces yet so we can skip first two states
+            case 0:
+            case 1:
+            //Expecting a login
+            case 2:
+                if(tokens.size() == 2 && tokens[0] == "login" && tokens[1].size() == 128)
+                {
+                    //Now we'll try to find the account
+                    bankSession->account = bank->tryLoginHash(tokens[1]);
+                    if(!bankSession->account)
+                    {
+                        //Failed login
+                        //TODO Blacklist hash
+                        bankSession->error = true;
+                        printf("Failed login!\n");
+                    }
+                    bankSession->state = 5;
+                    buildPacket(packet, "ack");
+                    sendPacket = true;
+                }
+                break;
+            case 5:
+                if(bankSession->error)
+                {
+                    buildPacket(packet, "Transaction denied.");
+                    sendPacket = true;
+                } 
+                else if(tokens.size() == 1 && tokens[0] == "balance")
+                {
+                    bankSession->state = 4;
+                    char moneyStr[256];
+                    sprintf(moneyStr,"%.2f",bankSession->account->getBalance());
+                    buildPacket(packet, std::string(moneyStr));
+                    sendPacket = true;
+                }
+                break;
+        }
         
         //TODO: process packet data
         
         //TODO: put new data in packet
         
         //send the new packet back to the client
-        if(sizeof(int) != send(csock, &length, sizeof(int), 0))
+        if(sendPacket)
         {
-            printf("[bank] fail to send packet length\n");
-            break;
-        }
-        if(length != send(csock, (void*)packet, length, 0))
-        {
-            printf("[bank] fail to send packet\n");
-            break;
+            length = strlen(packet);
+            printf("Send packet length: %d\n", length);
+            if(sizeof(int) != send(csock, &length, sizeof(int), 0))
+            {
+                printf("[bank] fail to send packet length\n");
+                break;
+            }
+            if(length != send(csock, (void*)packet, length, 0))
+            {
+                printf("[bank] fail to send packet\n");
+                break;
+            }
         }
     }
 
     printf("[bank] client ID #%ld disconnected\n", csock);
 
     close(csock);
+    delete bankSession;
     return NULL;
 }
 
@@ -148,7 +213,7 @@ void* console_thread(void* arg)
     Account* new_account = new Account();
 
     //Alice
-    new_account->createAccount(std::string("aice"), 1, std::string("123456"), bank->appSalt);
+    new_account->createAccount(std::string("alice"), 1, std::string("123456"), bank->appSalt);
     new_account->Deposit(100);
     bank->addAccount(new_account);
 
@@ -160,7 +225,7 @@ void* console_thread(void* arg)
 
     //Eve
     new_account = new Account();
-    new_account->createAccount(std::string("eve"), 3, std::string("234567"), bank->appSalt);
+    new_account->createAccount(std::string("eve"), 3, std::string("345678"), bank->appSalt);
     new_account->Deposit(0);
     bank->addAccount(new_account);
 
@@ -249,6 +314,18 @@ Account* Bank::getAccountByName(const std::string& username)
     for(unsigned int i = 0; i < this->accounts.size(); ++i)
     {
         if(this->accounts[i]->getAccountHolder() == username)
+        {
+            return this->accounts[i];
+        }
+    }
+    return 0;
+}
+
+Account* Bank::tryLoginHash(const std::string& hash)
+{
+    for(unsigned int i = 0; i < this->accounts.size(); ++i)
+    {
+        if(this->accounts[i]->tryHash(hash))
         {
             return this->accounts[i];
         }

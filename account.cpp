@@ -145,6 +145,8 @@ bool Account::createAccount(const std::string& accountHolder, const int& account
 
 	std::string card = makeHash(to_string(this->accountNum) + salt);
 
+	this->card = card;
+
 	std::ofstream outfile;
 
 	std::string cardFile = "cards/" + this->accountHolder + ".card";
@@ -174,7 +176,6 @@ bool Account::setPIN(const std::string& pin, const std::string& appSalt)
 	{
 		return false;
 	}
-
 	std::string hash = makeHash(this->card + pin + appSalt);
 
 	//verify that hash was actually created

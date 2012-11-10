@@ -12,6 +12,7 @@ public:
 	void addAccount(Account* account);
 	Account* getAccountByName(const std::string& username);
 	Account* connectToAccount();
+	Account* tryLoginHash(const std::string& hash);
 	std::string appSalt;
 	~Bank();
 private:
@@ -22,6 +23,14 @@ struct BankSocketThread
 {
 	Bank* bank;
 	int *csock;
+};
+
+struct BankSession
+{
+	Account* account;
+	unsigned int state;
+	bool error;
+	BankSession() : state(0),error(false),account(0) {}
 };
 
 #endif

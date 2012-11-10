@@ -169,7 +169,7 @@ int main(int argc, char* argv[])
                       
                         //This block takes the info the user input and puts it into a packet.
                         //The packet looks like: login,[username],[username.card account hash],[PIN]
-                        buildPacket(packet,std::string(command + ',' + accountHash + '\0'));
+                        buildPacket(packet,std::string(command + ',' + accountHash));
                         //strcpy(packet,(command + ',' + accountHash + '\0').c_str());
                     }
                     else
@@ -182,7 +182,12 @@ int main(int argc, char* argv[])
                 {
                     cout << "Usage: login [username]\n";
                 }
-            } 
+            }
+            else if(((std::string) "balance") == command)
+            {
+                sendPacket = 1;
+                buildPacket(packet,std::string(command));
+            }
 
             //TODO: other commands
             
@@ -207,13 +212,17 @@ int main(int argc, char* argv[])
                     printf("fail to send packet\n");
                     break;
                 }
-                
+
+                //Cleanup packet
+                packet[0] = '\0';
+
                 //TODO: do something with response packet
                 if(sizeof(int) != recv(sock, &length, sizeof(int), 0))
                 {
                     printf("fail to read packet length\n");
                     break;
                 }
+                printf("packet read len: %d\n", length);
                 if(length >= 1024)
                 {
                     printf("packet too long\n");
@@ -224,6 +233,8 @@ int main(int argc, char* argv[])
                     printf("fail to read packet\n");
                     break;
                 }
+                packet[length] = '\0';
+                printf("%s\n", packet);
             }
         }
         else
@@ -235,10 +246,4 @@ int main(int argc, char* argv[])
     //cleanup
     close(sock);
     return 0;
-}
-
-void buildPacket(char* packet, std::string command)
-{
-    //Build out nonce here
-    strcpy(packet, command.c_str());
 }
