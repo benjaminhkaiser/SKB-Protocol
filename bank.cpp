@@ -154,13 +154,13 @@ void* console_thread(void* arg)
 
     //Bob
     new_account = new Account();
-    new_account->createAccount(std::string("Bob"), 1, std::string("234567"), bank->appSalt);
+    new_account->createAccount(std::string("Bob"), 2, std::string("234567"), bank->appSalt);
     new_account->Deposit(50);
     bank->addAccount(new_account);
 
     //Eve
     new_account = new Account();
-    new_account->createAccount(std::string("Eve"), 1, std::string("234567"), bank->appSalt);
+    new_account->createAccount(std::string("Eve"), 3, std::string("234567"), bank->appSalt);
     new_account->Deposit(0);
     bank->addAccount(new_account);
 
