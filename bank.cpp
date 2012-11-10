@@ -148,19 +148,19 @@ void* console_thread(void* arg)
     Account* new_account = new Account();
 
     //Alice
-    new_account->createAccount(std::string("Aice"), 1, std::string("123456"), bank->appSalt);
+    new_account->createAccount(std::string("aice"), 1, std::string("123456"), bank->appSalt);
     new_account->Deposit(100);
     bank->addAccount(new_account);
 
     //Bob
     new_account = new Account();
-    new_account->createAccount(std::string("Bob"), 2, std::string("234567"), bank->appSalt);
+    new_account->createAccount(std::string("bob"), 2, std::string("234567"), bank->appSalt);
     new_account->Deposit(50);
     bank->addAccount(new_account);
 
     //Eve
     new_account = new Account();
-    new_account->createAccount(std::string("Eve"), 3, std::string("234567"), bank->appSalt);
+    new_account->createAccount(std::string("eve"), 3, std::string("234567"), bank->appSalt);
     new_account->Deposit(0);
     bank->addAccount(new_account);
 
