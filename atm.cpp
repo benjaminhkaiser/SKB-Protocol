@@ -159,7 +159,7 @@ int main(int argc, char* argv[])
 
                         //obtain card hash
                         std::string cardHash((std::istreambuf_iterator<char>(cardFile)),std::istreambuf_iterator<char>());
-                        cardHash = cardHash.substr(0,32);
+                        cardHash = cardHash.substr(0,128);
                         cout << "Card: " << cardHash << '\n';
 
                         //this block prompts for PIN for login and puts it in the pin var
@@ -190,7 +190,7 @@ int main(int argc, char* argv[])
                         }
                         
                         //Add the terminating newline
-                            packet[command.length() + 1 + username.length() + 1 + cardHash.length() + 1 + pin.length()] = '\0';
+                        packet[command.length() + 1 + username.length() + 1 + cardHash.length() + 1 + pin.length()] = '\0';
 
                     }
                     else
