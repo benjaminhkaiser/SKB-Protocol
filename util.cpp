@@ -7,6 +7,12 @@
 #include "includes/cryptopp/sha.h"
 #include "includes/cryptopp/hex.h"
 
+
+long double string_to_Double(const std::string& input_string)
+{
+	return strtold(input_string.c_str(), NULL);
+} //end string_to_Double function
+
 std::string makeHash(const std::string& input)
 {
 	CryptoPP::SHA512 hash;
