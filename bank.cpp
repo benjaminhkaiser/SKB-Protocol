@@ -271,7 +271,7 @@ void* console_thread(void* arg)
                 continue;
             }
 
-            double amount = atof(tokens[2].c_str());
+            long double amount = atof(tokens[2].c_str());
 
             if(amount <= 0)
             {
@@ -292,7 +292,7 @@ void* console_thread(void* arg)
                 continue;
             }
 
-            double cur_balance = current_account->Deposit(amount);
+            long double cur_balance = current_account->Deposit(amount);
 
             printf("Money deposited!\nNew balance: %f\n", cur_balance);
             continue;

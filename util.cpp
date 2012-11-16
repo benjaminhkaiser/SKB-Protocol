@@ -56,7 +56,7 @@ std::string randomString(const int len)
 
     return s;
 }
-
+//Shouldn't we only need to check if it is between 0 and max?
 bool doubleOverflow(const double& x, const double& y)
 {
 	double max = std::numeric_limits<double>::max();
@@ -70,7 +70,7 @@ bool doubleOverflow(const double& x, const double& y)
 		} else {
 			return true;
 		}
-	} else if(x < 0 && y < 0) {
+	} else if(x < 0 && y < 0) { //why would both of these be negative?
 		if(y >= min - x)
 		{
 			return false;

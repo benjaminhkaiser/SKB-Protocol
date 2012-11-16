@@ -22,7 +22,7 @@ Account::Account()
 /*
  * Transfer
  */
-bool Account::tryTransfer(double funds, const Account* toAccount) const
+bool Account::tryTransfer(long double funds, const Account* toAccount) const
 {
 	if(!tryWithdraw(funds))
 	{
@@ -37,7 +37,7 @@ bool Account::tryTransfer(double funds, const Account* toAccount) const
 
 	return true;
 }
-double Account::Transfer(double funds, Account* toAccount)
+long double Account::Transfer(long double funds, Account* toAccount)
 {
 	if(funds == 0)
 	{
@@ -57,7 +57,7 @@ double Account::Transfer(double funds, Account* toAccount)
  * Withdraw
  */
 
-bool Account::tryWithdraw(double funds) const
+bool Account::tryWithdraw(long long double funds) const
 {
 	if(funds < 0)
 	{
@@ -85,7 +85,7 @@ bool Account::tryWithdraw(double funds) const
 	return true;
 }
 
-double Account::Withdraw(double funds)
+long double Account::Withdraw(long double funds)
 {
 	if(tryWithdraw(funds))
 	{
@@ -99,7 +99,7 @@ double Account::Withdraw(double funds)
  * Deposit
  */
 
-bool Account::tryDeposit(double funds) const
+bool Account::tryDeposit(long double funds) const
 {
 	if(funds < 0)
 	{
@@ -113,7 +113,7 @@ bool Account::tryDeposit(double funds) const
 		return false;
 	}
 }
-double Account::Deposit(double funds)
+long double Account::Deposit(long double funds)
 {
 	if(tryDeposit(funds))
 	{
