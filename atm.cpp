@@ -24,7 +24,9 @@ using std::cout;
 using std::cin;
 using std::endl;
 
-void buildPacket(char* packet, std::string command);
+void buildPacket(char* packet, std::string packet_contents);
+//Function prototypes from util.h
+//bool string_to_Double(const std::string& input_string);
 
 //Helper function for getpass() It reads in each character to be masked.
 int getch() {
@@ -156,7 +158,7 @@ int main(int argc, char* argv[])
                         //obtain card hash
                         std::string cardHash((std::istreambuf_iterator<char>(cardFile)),std::istreambuf_iterator<char>());
                         cardHash = cardHash.substr(0,128);
-                        cout << "Card: " << cardHash << '\n';
+                        cout << "Card: " << bufArray[1] << '\n';
 
                         //this block prompts for PIN for login and puts it in the pin var
                         std::string pin;
@@ -170,6 +172,11 @@ int main(int argc, char* argv[])
                         //This block takes the info the user input and puts it into a packet.
                         //The packet looks like: login,[username],[username.card account hash],[PIN]
                         buildPacket(packet,std::string(command + ',' + accountHash));
+						if(packet[0] == '\0')
+						{
+							//How to retry if packet invalid?
+							//should we send and handle on bank side
+						} //end if empty packet error
                         //strcpy(packet,(command + ',' + accountHash + '\0').c_str());
                     }
                     else
@@ -187,7 +194,29 @@ int main(int argc, char* argv[])
             {
                 sendPacket = 1;
                 buildPacket(packet,std::string(command));
-            }
+            } //end if command is balance
+			else if(((std::string) "transfer") == command)
+			{
+				//If this command is entered correctly, then is_double
+				//should be 0 and transfer_value should be both positive and
+				//not 0
+				long double is_double = string_to_Double(bufArray[1]);
+				long double transfer_value = string_to_Double(bufArray[2]);
+				if(bufArray.size() == 3 && is_double == 0 && transfer_value > 0)
+				{
+					std::string concatenated_bufArray = "";
+					concatenated_bufArray += command;
+					concatenated_bufArray += ',';
+					concatenated_bufArray += bufArray[1];
+					concatenated_bufArray += ',';
+					concatenated_bufArray += bufArray[2];
+					
+				} //end if correct number of args, last arg is a double, second arg is not a double
+				else
+				{
+					cout << "Usage: transfer [target_account] [amount]";
+				} //end else in correct format
+			} //end else if command is transfer
 
             //TODO: other commands
             
