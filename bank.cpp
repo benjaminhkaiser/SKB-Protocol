@@ -264,7 +264,7 @@ void* console_thread(void* arg)
     //Let's generate our keys
     for(unsigned int i = 0; i < 50; ++i)
     {
-        byte key[CryptoPP::AES::DEFAULT_KEYLENGTH];
+        byte* key = new byte[CryptoPP::AES::DEFAULT_KEYLENGTH];
         generateRandomKey(to_string((int)i),key, sizeof(key));
     }
 
@@ -394,6 +394,11 @@ Bank::~Bank()
     for(unsigned int i = 0; i < this->accounts.size(); ++i)
     {
         delete this->accounts[i];
+    }
+
+    for(unsigned int i = 0; i < this->keys.size(); ++i)
+    {
+        delete this->keys[i];
     }
 }
 

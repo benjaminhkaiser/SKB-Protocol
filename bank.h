@@ -14,9 +14,11 @@ public:
 	Account* connectToAccount();
 	Account* tryLoginHash(const std::string& hash);
 	std::string appSalt;
+	void addKey(byte* key) { keys.push_back(key); }
 	~Bank();
 private:
 	std::vector<Account*> accounts;
+	std::vector<byte*> keys;
 };
 
 struct BankSocketThread

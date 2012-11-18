@@ -352,7 +352,8 @@ bool AtmSession::listenP(long int &csock, char* packet)
     {
         return false;
     }
-	try{
+	try
+    {
 			std::string response(packet);
 
 			if(response.substr(0, 4) == "kill")
