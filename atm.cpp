@@ -354,21 +354,21 @@ bool AtmSession::listenP(long int &csock, char* packet)
     }
 	try
     {
-			std::string response(packet);
+		std::string response(packet);
 
-			if(response.substr(0, 4) == "kill")
-			{
-				return false;
-			}
+		if(response.substr(0, 4) == "kill")
+		{
+			return false;
+		}
 
-			if(response.substr(response.size()-257, 128) != atmNonce)
-			{
-				return false;
-			}
+		if(response.substr(response.size()-257, 128) != atmNonce)
+		{
+			return false;
+		}
 
-			bankNonce = response.substr(response.size()-128, 128);
+		bankNonce = response.substr(response.size()-128, 128);
 
-			return true;
+		return true;
 	} //end try
 	catch (std::exception e)
 	{
