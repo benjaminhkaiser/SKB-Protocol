@@ -14,7 +14,9 @@
 #include "includes/cryptopp/hex.h"
 #include "includes/cryptopp/aes.h"
 #include "includes/cryptopp/ccm.h"
+#include "includes/cryptopp/gcm.h"
 
+using CryptoPP::GCM;
 using CryptoPP::AES;
 using CryptoPP::CCM;
 
@@ -198,7 +200,7 @@ void encryptPacket(void* packet, std::string key_file)
 				)//Hex Decoder
 			); //String Source
 	//Decode the key from the file
-	
+	GCM< AES >::Encryption p;
 } //end encryptPacket function
 
 void decryptPacket(void* packet)
