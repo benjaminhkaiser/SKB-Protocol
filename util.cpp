@@ -170,3 +170,30 @@ bool isDouble(std::string questionable_string)
 	} //end if no valid conversion
 	return true;
 } //end isDouble function
+
+void generateRandomKey(std::string name, byte* key, long unsigned int length)
+{
+	CryptoPP::AutoSeededRandomPool prng;
+
+	//byte key[CryptoPP::AES::DEFAULT_KEYLENGTH];
+	prng.GenerateBlock(key, length);
+
+	std::string encoded;
+
+	CryptoPP::StringSource(key, length, true,
+		new CryptoPP::HexEncoder(
+			new CryptoPP::StringSink(encoded)
+		) // HexEncoder
+	); // StringSource
+
+		std::ofstream outfile;
+
+	std::string keyFile = "keys/" + name + ".key";
+
+	std::ofstream file_out(keyFile.c_str());
+	if(file_out.is_open())
+	{
+		file_out << encoded;
+	} //end if valid outfstream
+	file_out.close();
+}
