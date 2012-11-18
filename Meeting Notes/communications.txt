@@ -1,13 +1,10 @@
-ATM																							Bank
-
-getNonce()															----> 		Generate Nb & create session
-Store Nb															<----		E(Nb)
-Ex(L | Na | H(Na + Nb))												---->		Dx(M) -> validateNonce() -> validateLogin(L)	
-Dx(L | Nb) -> validateNonce() ->  == "I Got that"					<----		generateNb() -> Ex(M | Nb | H(Na + Nb))	
-generateNa() -> M = command -> Ex(M | Na | H(Na + Nb))				---->		Dx(M) -> validateNonce() -> executeCommand() & return r
-Dx(L | Nb) & act on return											<----		generateNb() -> Ex(r | Nb | H(Na + Nb))	& kill session
-
-
+	ATM										Bank
+getNonce()						----> 		Generate Nb & create session
+Store Nb						<----		E(Nb)
+Ex(L | Na | H(Na + Nb))					---->		Dx(M) -> validateNonce() -> validateLogin(L)	
+Dx(L | Nb) -> validateNonce() ->  == "I Got that"	<----		generateNb() -> Ex(M | Nb | H(Na + Nb))	
+generateNa() -> M = command -> Ex(M | Na | H(Na + Nb))	---->		Dx(M) -> validateNonce() -> executeCommand() & return r
+Dx(L | Nb) & act on return				<----		generateNb() -> Ex(r | Nb | H(Na + Nb))	& kill session
 
 States:
 0: ATM need to request initial nonce from the bank.. this will also let the two handshake.
