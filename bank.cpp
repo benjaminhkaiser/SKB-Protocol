@@ -144,7 +144,6 @@ void* client_thread(void* arg)
         //Now we're compare what we go to what state we expect to be in
         switch(bankSession->state)
         {
-            //We're not doing nonces yet so we can skip first two states
             case 0:
             case 1:
                 if(tokens.size() == 2 && tokens[0] == "handshake" && tokens[1].size() == 128)
@@ -175,11 +174,12 @@ void* client_thread(void* arg)
                     fatalError = true;
                     break;
                 }
-                if(tokens.size() == 4 && tokens[0] == "login" && tokens[1].size() == 128)
+                if(tokens.size() == 5 && tokens[0] == "login" && tokens[1].size() == 128)
                 {
                     //Now we'll try to find the account
-                    bankSession->account = bank->tryLoginHash(tokens[1]);
-                    if(!bankSession->account)
+                    //bankSession->account = bank->tryLoginHash(tokens[1]);
+                    bankSession->account = bank->getAccountByName(tokens[2]);
+                    if(!bankSession->account || !bankSession->account->tryHash(tokens[1]))
                     {
                         //Failed login
                         //TODO Blacklist hash

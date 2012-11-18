@@ -178,7 +178,7 @@ int main(int argc, char* argv[])
                         //This block takes the info the user input and puts it into a packet.
                         //The packet looks like: login,[username],[username.card account hash],[PIN]
                         //buildPacket(packet,std::string(command + ',' + accountHash));
-                        if(!atmSession.sendP(sock, packet,std::string("login," + accountHash)))
+                        if(!atmSession.sendP(sock, packet,std::string("login," + accountHash + "," + username)))
                         {
                             cout << "Unexpected error.\n";
                             break;
