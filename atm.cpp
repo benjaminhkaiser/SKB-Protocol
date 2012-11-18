@@ -21,6 +21,7 @@
 #include "util.h"
 #include "atm.h"
 
+
 using std::cout;
 using std::cin;
 using std::endl;
@@ -139,6 +140,7 @@ int main(int argc, char* argv[])
             // There exists a command, check the command
             if(!strcmp(buf, "logout"))
             {   
+				//TODO: Send logout message so that someone could log in at a different atm
                 //sendPacket = 1; // Send packet because valid command
                 break;
             }
@@ -278,46 +280,6 @@ int main(int argc, char* argv[])
                 break;
             }
 
-            /*if(sendPacket)
-            {
-                //This block sends the message through the proxy to the bank. 
-                //There are two send messages - 1) packet length and 2) actual packet
-                length = strlen(packet);
-                cout << "Plen: " << length << endl;
-                if(sizeof(int) != send(sock, &length, sizeof(int), 0))
-                {
-                    printf("fail to send packet mqlength\n");
-                    break;
-                }
-                if(length != send(sock, (void*)packet, length, 0))
-                {
-                    printf("fail to send packet\n");
-                    break;
-                }
-
-                //Cleanup packet
-                packet[0] = '\0';
-
-                //TODO: do something with response packet
-                if(sizeof(int) != recv(sock, &length, sizeof(int), 0))
-                {
-                    printf("fail to read packet length\n");
-                    break;
-                }
-                printf("packet read len: %d\n", length);
-                if(length >= 1024)
-                {
-                    printf("packet too long\n");
-                    break;
-                }
-                if(length != recv(sock, packet, length, 0))
-                {
-                    printf("fail to read packet\n");
-                    break;
-                }
-                packet[length] = '\0';
-                printf("%s\n", packet);
-            }*/
         }
         else
         {
@@ -374,7 +336,8 @@ bool AtmSession::handshake(long int &csock)
 
     return true;
 }
-
+//Takes a socket, a packet and a command and generates a nonce, then it
+//sends the packet with the nonce
 bool AtmSession::sendP(long int &csock, void* packet, std::string command)
 {
     atmNonce = makeHash(randomString(128));
@@ -385,25 +348,29 @@ bool AtmSession::sendP(long int &csock, void* packet, std::string command)
 }
 bool AtmSession::listenP(long int &csock, char* packet)
 {
-    //TODO: Exception incase substr fails
     if(!listenPacket(csock,packet))
     {
         return false;
     }
+	try{
+			std::string response(packet);
 
-    std::string response(packet);
+			if(response.substr(0, 4) == "kill")
+			{
+				return false;
+			}
 
-    if(response.substr(0, 4) == "kill")
-    {
-        return false;
-    }
+			if(response.substr(response.size()-257, 128) != atmNonce)
+			{
+				return false;
+			}
 
-    if(response.substr(response.size()-257, 128) != atmNonce)
-    {
-        return false;
-    }
+			bankNonce = response.substr(response.size()-128, 128);
 
-    bankNonce = response.substr(response.size()-128, 128);
-
-    return true;
+			return true;
+	} //end try
+	catch (Exception e)
+	{
+			return false;
+	} //end catch
 }

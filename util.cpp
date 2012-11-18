@@ -11,7 +11,11 @@
 #include <netdb.h>
 #include "includes/cryptopp/sha.h"
 #include "includes/cryptopp/hex.h"
+#include "includes/cryptopp/aes.h"
+#include "includes/cryptopp/ccm.h"
 
+using CryptoPP::AES;
+using CryptoPP::CCM;
 
 long double string_to_Double(const std::string& input_string)
 {
@@ -106,7 +110,6 @@ void buildPacket(char* packet, std::string command)
 {
 	packet[0] = '\0';
     //Build out nonce here
-	//
 	
 	//Check if command overflows
 	//change 1023 to variable amount based on nonce once implemented
@@ -117,7 +120,7 @@ void buildPacket(char* packet, std::string command)
 	} //end if command does not overflow
 
 }
-
+//Takes the socket and packet and sends the packet
 bool sendPacket(long int &csock, void* packet)
 {
 	int length = 0;
@@ -138,6 +141,7 @@ bool sendPacket(long int &csock, void* packet)
 	return true;
 }
 
+//Listens for a packet and modifies the packet variable accordingly
 bool listenPacket(long int &csock, char* packet)
 {
 	int length;
@@ -171,3 +175,37 @@ bool isDouble(std::string questionable_string)
 	} //end if no valid conversion
 	return true;
 } //end isDouble function
+
+void encryptPacket(void* packet, std::string key_file)
+{
+} //end encryptPacket function
+
+void decryptPacket(void* packet)
+{
+} //end decryptPacket function
+void generateRandomKey(std::string name, byte* key, long unsigned int length)
+{
+	CryptoPP::AutoSeededRandomPool prng;
+
+	//byte key[CryptoPP::AES::DEFAULT_KEYLENGTH];
+	prng.GenerateBlock(key, length);
+
+	std::string encoded;
+
+	CryptoPP::StringSource(key, length, true,
+		new CryptoPP::HexEncoder(
+			new CryptoPP::StringSink(encoded)
+		) // HexEncoder
+	); // StringSource
+
+		std::ofstream outfile;
+
+	std::string keyFile = "keys/" + name + ".key";
+
+	std::ofstream file_out(keyFile.c_str());
+	if(file_out.is_open())
+	{
+		file_out << encoded;
+	} //end if valid outfstream
+	file_out.close();
+}
