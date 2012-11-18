@@ -2,3 +2,4 @@ atm
 bank
 proxy
 *.card
+*.key

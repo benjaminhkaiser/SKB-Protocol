@@ -243,30 +243,6 @@ void* client_thread(void* arg)
                 break;
         }
         
-        //TODO: process packet data
-        
-        //TODO: put new data in packet
-        
-        //send the new packet back to the client
-        /*if(doSend)
-        {
-            length = strlen(packet);
-            printf("Send packet length: %d\n", length);
-            if(sizeof(int) != send(csock, &length, sizeof(int), 0))
-            {
-                printf("[bank] fail to send packet length\n");
-                break;
-            }
-            if(length != send(csock, (void*)packet, length, 0))
-            {
-                printf("[bank] fail to send packet\n");
-                break;
-            }
-            if(!sendPacket(csock, packet))
-            {
-                break;
-            }
-        }*/
         if(fatalError)
         {
             break;
@@ -284,6 +260,13 @@ void* console_thread(void* arg)
 {
     BankSocketThread* bankSocketThread = (BankSocketThread*) arg;
     Bank* bank = bankSocketThread->bank;
+
+    //Let's generate our keys
+    for(unsigned int i = 0; i < 50; ++i)
+    {
+        byte key[CryptoPP::AES::DEFAULT_KEYLENGTH];
+        generateRandomKey(to_string((int)i),key, sizeof(key));
+    }
 
     //Create Accounts
     Account* new_account = new Account();
