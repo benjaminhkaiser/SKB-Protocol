@@ -180,38 +180,30 @@ bool isDouble(std::string questionable_string)
 	return true;
 } //end isDouble function
 
-void encryptPacket(void* packet, std::string key_file)
+void encryptPacket(void* packet, byte* aes_key)
 {
-	std::string key;
-	std::ifstream input_key_file(key_file.c_str());
+	std::string plaintext((char*)packet);
 
-	if(input_key_file.is_open())
-	{
-		input_key_file >> key;
-	} //end if file is open
-
-	input_key_file.close();
-	
-	//Create a byte array to hold the aes_key
-	byte aes_key[CryptoPP::AES::DEFAULT_KEYLENGTH];
-
-	CryptoPP::StringSource(key, true,
-			new CryptoPP::HexDecoder(
-				new CryptoPP::ArraySink(aes_key, sizeof(aes_key)) //ArraySink
-				)//Hex Decoder
-			); //String Source
-	
 	//Decode the key from the file
 	GCM< AES >::Encryption p;
 	byte iv[ AES::BLOCKSIZE * 16 ];
 	CryptoPP::AutoSeededRandomPool prng;
 	prng.GenerateBlock( iv, sizeof(iv) );
 	p.SetKeyWithIV( aes_key, CryptoPP::AES::DEFAULT_KEYLENGTH, iv, sizeof(iv) );
+	std::string ciphertext;
+	CryptoPP::StringSource(plaintext, true,
+		new CryptoPP::AuthenticatedEncryptionFilter(p,
+			new CryptoPP::StringSink(ciphertext), false, 16));
+	std::cout << ciphertext;
 	
 } //end encryptPacket function
 
 void decryptPacket(void* packet)
 {
+	GCM< AES >::Decryption d;
+	byte iv[ AES::BLOCKSIZE * 16];
+	byte key[CryptoPP::AES::DEFAULT_KEYLENGTH];
+	d.SetKeyWithIV( key, CryptoPP::AES::DEFAULT_KEYLENGTH, iv, sizeof(iv));
 } //end decryptPacket function
 void generateRandomKey(std::string name, byte* key, long unsigned int length)
 {

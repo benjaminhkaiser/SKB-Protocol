@@ -74,9 +74,9 @@ std::string getpass(const char *prompt, bool show_asterisk=true){
 
 int main(int argc, char* argv[])
 {
-    if(argc != 2)
+    if(argc != 3)
     {
-        printf("Usage: atm proxy-port\n");
+        printf("Usage: atm proxy-port atm-number(1-50)\n");
         return -1;
     }
  
@@ -108,7 +108,29 @@ int main(int argc, char* argv[])
 
     AtmSession atmSession = AtmSession();
     
-    //input loop   
+	//construct filename from command-line argument
+	std::string filename = "keys/" + std::string(argv[2]) + ".key";	
+	
+	//read in key from file
+	std::string key;
+	std::ifstream input_file(filename.c_str());
+	if(input_file.is_open()){
+		input_file >> key;
+	}
+	input_file.close();
+
+	byte atm_key(CryptoPP::AES::DEFAULT_KEYLENGTH);
+
+	//assign to atmSessions    	
+	CryptoPP::StringSource(key, true,
+		new CryptoPP::HexDecoder(
+			new CryptoPP::ArraySink(atmSession.key,sizeof(atm_key))
+			)
+		);
+
+	
+
+	//input loop   
     while(1)
     {
         char buf[80];
@@ -347,7 +369,7 @@ bool AtmSession::sendP(long int &csock, void* packet, std::string command)
     atmNonce = makeHash(randomString(128));
     command = command + "," + atmNonce + "," + bankNonce;
     buildPacket((char*)packet, command);
-
+	encryptPacket(packet, this->key);
     return sendPacket(csock, packet);
 }
 bool AtmSession::listenP(long int &csock, char* packet)

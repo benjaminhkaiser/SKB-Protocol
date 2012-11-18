@@ -17,7 +17,7 @@ struct AtmSession
 	unsigned int state;
 	std::string bankNonce;
 	std::string atmNonce;
-
+	byte* key;
 };
 
 #endif
