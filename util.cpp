@@ -187,11 +187,18 @@ void encryptPacket(void* packet, std::string key_file)
 		input_key_file >> key;
 	} //end if file is open
 
-	CryptoPP::StringSource(key, true,
-					new CryptoPP::HexEncoder(
-							new CryptoPP::StringSink(key))
-					);	//end StringSource
 	input_key_file.close();
+	
+	//Create a byte array to hold the aes_key
+	byte aes_key[CryptoPP::AES::DEFAULT_KEYLENGTH];
+
+	CryptoPP::StringSource(key, true,
+			new CryptoPP::HexDecoder(
+				new CryptoPP::ArraySink(aes_key, sizeof(aes_key)) //ArraySink
+				)//Hex Decoder
+			); //String Source
+	//Decode the key from the file
+	
 } //end encryptPacket function
 
 void decryptPacket(void* packet)
