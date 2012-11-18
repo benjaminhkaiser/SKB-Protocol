@@ -11,6 +11,7 @@
 Account::Account()
 {
 	locked = true;
+	inUse = false;
 	failsRemaining = 3;
 	transferAttemptsRemaining = 3;
 	withdrawLimitRemaining = 1000;
@@ -211,7 +212,7 @@ bool Account::setPIN(const std::string& pin, const std::string& appSalt)
 
 bool Account::tryLogin(const std::string& pin, const std::string& appSalt)
 {
-	if(this->locked)
+	if(this->locked || this->inUse)
 	{
 		return false;
 	}
@@ -229,7 +230,7 @@ bool Account::tryLogin(const std::string& pin, const std::string& appSalt)
 
 bool Account::tryHash(const std::string& attemptedHash)
 {
-	if(this->locked)
+	if(this->locked || this->inUse)
 	{
 		return false;
 	}

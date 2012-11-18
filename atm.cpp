@@ -138,8 +138,12 @@ int main(int argc, char* argv[])
             std::string command = bufArray[0];
                 
             // There exists a command, check the command
-            if(!strcmp(buf, "logout"))
+            if(((std::string) "logout") == command|| ((std::string) "exit") == command)
             {   
+                if(atmSession.state > 0)
+                {
+                    atmSession.sendP(sock,packet,"logout");
+                }
 				//TODO: Send logout message so that someone could log in at a different atm
                 //sendPacket = 1; // Send packet because valid command
                 break;
