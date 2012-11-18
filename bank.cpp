@@ -89,7 +89,7 @@ void* client_thread(void* arg)
     BankSocketThread* bankSocketThread = (BankSocketThread*) arg;
     Bank* bank = bankSocketThread->bank;
     BankSession* bankSession = new BankSession();
-    bankSession->state = 2;
+    bankSession->state = 1;
 
     long int csock = (long int)*(bankSocketThread->csock);
     
@@ -98,13 +98,16 @@ void* client_thread(void* arg)
     //input loop
     int length;
     char packet[1024];
-    bool sendPacket = false;
+    bool doSend = false;
+    bool fatalError = false;
     std::vector<std::string> tokens;
     while(1)
     {
-        sendPacket = false;
+        doSend = false;
+        fatalError = false;
         tokens.clear();
-        packet[0] = '\0';
+        
+        /*packet[0] = '\0';
         //read the packet from the ATM
         if(sizeof(int) != recv(csock, &length, sizeof(int), 0)){
             break;
@@ -119,7 +122,11 @@ void* client_thread(void* arg)
             printf("[bank] fail to read packet\n");
             break;
         }
-        packet[length] = '\0';
+        packet[length] = '\0';*/
+        if(!listenPacket(csock, packet))
+        {
+            break;
+        }
         
         //Temporary code for debugging: print received packet
         printf("%s", packet);
@@ -140,9 +147,35 @@ void* client_thread(void* arg)
             //We're not doing nonces yet so we can skip first two states
             case 0:
             case 1:
+                if(tokens.size() == 2 && tokens[0] == "handshake" && tokens[1].size() == 128)
+                {
+                    bankSession->atmNonce = tokens[1];
+                    bankSession->bankNonce = makeHash(randomString(128));
+                    if(bankSession->bankNonce.size() == 0)
+                    {
+                        printf("Unexpected error\n");
+                        fatalError = true;
+                        break;
+                    }
+                    buildPacket(packet, "handshakeResponse," + bankSession->atmNonce + "," + bankSession->bankNonce);
+                    if(!sendPacket(csock, packet))
+                    {
+                        printf("Unexpected error\n");
+                        fatalError = true;
+                        break;
+                    }
+                    bankSession->state = 2;
+                }
+                break;
             //Expecting a login
             case 2:
-                if(tokens.size() == 2 && tokens[0] == "login" && tokens[1].size() == 128)
+                if(!bankSession->validateNonce(std::string(packet)))
+                {
+                    printf("Unexpected error\n");
+                    fatalError = true;
+                    break;
+                }
+                if(tokens.size() == 4 && tokens[0] == "login" && tokens[1].size() == 128)
                 {
                     //Now we'll try to find the account
                     bankSession->account = bank->tryLoginHash(tokens[1]);
@@ -151,27 +184,62 @@ void* client_thread(void* arg)
                         //Failed login
                         //TODO Blacklist hash
                         bankSession->error = true;
-                        printf("Failed login!\n");
+                        printf("[notice] Failed login!\n");
                     }
                     bankSession->state = 5;
-                    buildPacket(packet, "ack");
-                    sendPacket = true;
+                    if(!bankSession->sendP(csock,packet, "ack"))
+                    {
+                        printf("Unexpected error!\n");
+                        fatalError = true;
+                        break;
+                    }
                 }
                 break;
             case 5:
+                bool returnBalance = false;
+                bankSession->state = 4;
                 if(bankSession->error)
                 {
-                    buildPacket(packet, "Transaction denied.");
-                    sendPacket = true;
+                    //Just hold here
                 } 
-                else if(tokens.size() == 1 && tokens[0] == "balance")
+                else if(tokens.size() == 3 && tokens[0] == "balance")
                 {
-                    bankSession->state = 4;
+                    returnBalance = true;
+                }
+                else if(tokens.size() == 4 && tokens[0] == "withdraw" && isDouble(tokens[1]))
+                {
+                    double amount = atof(tokens[1].c_str());
+                    if(!bankSession->account->Withdraw(amount))
+                    {
+                        returnBalance = false;
+                        bankSession->error = true;
+                    }
+                    returnBalance = true;
+                }
+                else if(tokens.size() == 5 && tokens[0] == "transfer" && !isDouble(tokens[1])
+                    && isDouble(tokens[2]))
+                {
+                    Account* accountTo = bank->getAccountByName(tokens[1]);
+                    double amount = atof(tokens[2].c_str());
+                    if(!bankSession->account->Transfer(amount, accountTo))
+                    {
+                        returnBalance = false;
+                        bankSession->error = true;
+                    }
+                    returnBalance = true;
+                }
+
+                if(bankSession->error)
+                {
+                    bankSession->sendP(csock, packet, "denied");
+                }
+                else if(returnBalance)
+                {
                     char moneyStr[256];
                     sprintf(moneyStr,"%.2f",bankSession->account->getBalance());
-                    buildPacket(packet, std::string(moneyStr));
-                    sendPacket = true;
+                    bankSession->sendP(csock, packet, std::string(moneyStr));
                 }
+                bankSession->state = 0;
                 break;
         }
         
@@ -180,7 +248,7 @@ void* client_thread(void* arg)
         //TODO: put new data in packet
         
         //send the new packet back to the client
-        if(sendPacket)
+        /*if(doSend)
         {
             length = strlen(packet);
             printf("Send packet length: %d\n", length);
@@ -194,6 +262,14 @@ void* client_thread(void* arg)
                 printf("[bank] fail to send packet\n");
                 break;
             }
+            if(!sendPacket(csock, packet))
+            {
+                break;
+            }
+        }*/
+        if(fatalError)
+        {
+            break;
         }
     }
 
@@ -244,7 +320,6 @@ void* console_thread(void* arg)
             printf("Invalid input\n");
             continue;
         }
-        printf("%s of size: %d\n", tokens[1].c_str(), (int)tokens[1].size());
         if(tokens[0] == "balance")
         {
             if(tokens.size() != 2)
@@ -259,7 +334,7 @@ void* console_thread(void* arg)
                 printf("Invalid account\n");
                 continue;
             }
-            printf("Balance: %f\n", current_account->getBalance());
+            printf("Balance: %.2f\n", current_account->getBalance());
             continue;
         }
 
@@ -286,15 +361,14 @@ void* console_thread(void* arg)
                 continue;
             }
 
-            if(!current_account->tryDeposit(amount))
+            if(current_account->Deposit(amount))
             {
-                printf("Invalid amount\n");
-                continue;
+                double cur_balance = current_account->getBalance();
+                printf("Money deposited!\nNew balance: %.2f\n", cur_balance);
+            } else {
+                printf("Error depositing money!\n");
             }
 
-            double cur_balance = current_account->Deposit(amount);
-
-            printf("Money deposited!\nNew balance: %f\n", cur_balance);
             continue;
         }
 
@@ -339,4 +413,26 @@ Bank::~Bank()
     {
         delete this->accounts[i];
     }
+}
+
+
+bool BankSession::sendP(long int &csock, void* packet, std::string command)
+{
+    bankNonce = makeHash(randomString(128));
+    command = command + "," + atmNonce + "," + bankNonce;
+    buildPacket((char*)packet, command);
+
+    return sendPacket(csock, packet);
+}
+
+bool BankSession::validateNonce(std::string packet)
+{
+    //TODO: Exception incase substr fails
+    if(packet.substr(packet.size()-128, 128) != bankNonce)
+    {
+        return false;
+    }
+    atmNonce = packet.substr(packet.size()-257, 128);
+
+    return true;
 }

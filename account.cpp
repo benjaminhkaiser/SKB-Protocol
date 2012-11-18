@@ -24,6 +24,14 @@ Account::Account()
  */
 bool Account::tryTransfer(double funds, const Account* toAccount) const
 {
+	if(!this->transferAttemptsRemaining)
+	{
+		return false;
+	}
+	if(!toAccount)
+	{
+		return false;
+	}
 	if(!tryWithdraw(funds))
 	{
 		return false;
@@ -37,20 +45,24 @@ bool Account::tryTransfer(double funds, const Account* toAccount) const
 
 	return true;
 }
-double Account::Transfer(double funds, Account* toAccount)
+bool Account::Transfer(double funds, Account* toAccount)
 {
 	if(funds == 0)
 	{
-		return this->balance;
+		return false;
 	}
 
 	if(tryTransfer(funds, toAccount))
 	{
 		Withdraw(funds);
 		toAccount->Deposit(funds);
+		return true;
 	}
-
-	return this->balance;
+	if(this->transferAttemptsRemaining > 0)
+	{
+		this->transferAttemptsRemaining--;
+	}
+	return false;
 }
 
 /*
@@ -85,14 +97,16 @@ bool Account::tryWithdraw(double funds) const
 	return true;
 }
 
-double Account::Withdraw(double funds)
+bool Account::Withdraw(double funds)
 {
 	if(tryWithdraw(funds))
 	{
 		this->balance -= funds;
+		this->withdrawLimitRemaining -= funds;
+		return true;
 	}
 
-	return this->balance;
+	return false;
 }
 
 /*
@@ -113,14 +127,14 @@ bool Account::tryDeposit(double funds) const
 		return false;
 	}
 }
-double Account::Deposit(double funds)
+bool Account::Deposit(double funds)
 {
 	if(tryDeposit(funds))
 	{
 		this->balance += funds;
-
+		return true;
 	}
-	return this->balance;
+	return false;
 }
 
 

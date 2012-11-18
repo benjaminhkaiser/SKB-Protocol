@@ -27,10 +27,20 @@ struct BankSocketThread
 
 struct BankSession
 {
+	//Construct
+	BankSession() : state(0),error(false),account(0) {}
+
+	//Functions
+	bool sendP(long int &csock, void* packet, std::string command);
+	bool validateNonce(std::string packet);
+
+	//Variables
 	Account* account;
 	unsigned int state;
 	bool error;
-	BankSession() : state(0),error(false),account(0) {}
+	std::string bankNonce;
+	std::string atmNonce;
+
 };
 
 #endif

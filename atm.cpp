@@ -19,22 +19,11 @@
 #include <iterator>
 #include <termios.h>
 #include "util.h"
+#include "atm.h"
 
 using std::cout;
 using std::cin;
 using std::endl;
-
-void buildPacket(char* packet, std::string packet_contents);
-
-bool isDouble(std::string questionable_string)
-{
-	long double value = strtold(questionable_string.c_str(), NULL);
-	if(value == 0)
-	{
-		return false;
-	} //end if no valid conversion
-	return true;
-} //end isDouble function
 
 //Helper function for getpass() It reads in each character to be masked.
 int getch() {
@@ -95,7 +84,7 @@ int main(int argc, char* argv[])
 
     //socket setup
     unsigned short proxport = atoi(argv[1]);
-    int sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    long int sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if(!sock)
     {
         printf("fail to create socket\n");
@@ -115,6 +104,8 @@ int main(int argc, char* argv[])
         printf("fail to connect to proxy\n");
         return -1;
     }
+
+    AtmSession atmSession = AtmSession();
     
     //input loop   
     while(1)
@@ -124,6 +115,7 @@ int main(int argc, char* argv[])
         int length;
         int sendPacket = 0;
         std::vector<std::string> bufArray;
+        std::vector<std::string> tokens;
 
         // clean up last packet and buffer
         buf[0] = '\0';
@@ -147,10 +139,10 @@ int main(int argc, char* argv[])
             // There exists a command, check the command
             if(!strcmp(buf, "logout"))
             {   
-                sendPacket = 1; // Send packet because valid command
+                //sendPacket = 1; // Send packet because valid command
                 break;
             }
-            else if(((std::string) "login") == command) //if command is 'login'
+            else if(((std::string) "login") == command && atmSession.state == 0) //if command is 'login'
             {   
                 //this block prompts for 30 char username for login and puts it in the username var
                 // Continue as long as there is only one argument.
@@ -161,6 +153,12 @@ int main(int argc, char* argv[])
                     std::ifstream cardFile(("cards/" + username + ".card").c_str());
                     if(cardFile)
                     {
+                        atmSession.handshake(sock);
+                        if(atmSession.state != 2)
+                        {
+                            cout << "Unexpected error.\n";
+                            break;
+                        }
                         sendPacket = 1; // Send packet because valid command
 
                         //obtain card hash
@@ -172,19 +170,29 @@ int main(int argc, char* argv[])
                         std::string pin;
                         pin = getpass("PIN: ", true);
                         //Pin is limited to 6 characters
-                        pin = pin.substr(0,6);
+                        //pin = pin.substr(0,6);
 
                         //Now we'll figure out the hash that we need to send
                         std::string accountHash = makeHash(cardHash + pin + appSalt);
                       
                         //This block takes the info the user input and puts it into a packet.
                         //The packet looks like: login,[username],[username.card account hash],[PIN]
-                        buildPacket(packet,std::string(command + ',' + accountHash));
-						if(packet[0] == '\0')
-						{
-							//How to retry if packet invalid?
-							//should we send and handle on bank side
-						} //end if empty packet error
+                        //buildPacket(packet,std::string(command + ',' + accountHash));
+                        if(!atmSession.sendP(sock, packet,std::string("login," + accountHash)))
+                        {
+                            cout << "Unexpected error.\n";
+                            break;
+                        }
+                        atmSession.state = 3;
+
+                        if(!atmSession.listenP(sock, packet) || std::string(packet).substr(0,3) != "ack")
+                        {
+                            cout << "Unexpected error.\n";
+                            cout << "Expected ack but got " << std::string(packet).substr(0,3) << "\n";
+                            break;
+                        }
+                        atmSession.state = 4;
+                        cout << "All logged in!\n";
                         //strcpy(packet,(command + ',' + accountHash + '\0').c_str());
                     }
                     else
@@ -198,19 +206,58 @@ int main(int argc, char* argv[])
                     cout << "Usage: login [username]\n";
                 }
             }
-            else if(((std::string) "balance") == command)
+            else if(((std::string) "balance") == command && atmSession.state == 4)
             {
-                sendPacket = 1;
-                buildPacket(packet,std::string(command));
+                atmSession.sendP(sock,packet,"balance");
+                atmSession.listenP(sock,packet);
+                split(std::string(packet), ',',tokens);
+                if(tokens[0] == "denied")
+                {
+                    cout << "Transaction denied.\n";
+                } else {
+                    printf("Transaction complete!\nCurrent balance: %s\n", tokens[0].c_str());
+                }
+                atmSession.state = 5;
             } //end if command is balance
-			else if(((std::string) "transfer") == command)
+            else if(((std::string) "withdraw") == command && atmSession.state == 4)
+            {
+                if(bufArray.size() == 2 && isDouble(bufArray[1]))
+                {
+                    atmSession.sendP(sock,packet,"withdraw," + bufArray[1]);
+                    atmSession.listenP(sock,packet);
+                    split(std::string(packet), ',',tokens);
+                    if(tokens[0] == "denied")
+                    {
+                        cout << "Transaction denied.\n";
+                    } else {
+                        printf("Transaction complete!\nCurrent balance: %s\n", tokens[0].c_str());
+                    }
+                    atmSession.state = 5;
+                } //end if correct number of args, last arg is a double
+                else
+                {
+                    cout << "Usage: withdraw [amount]\n";
+                } //end else in correct format
+
+            } //end if command is withdraw
+			else if(((std::string) "transfer") == command && atmSession.state == 4)
 			{
 				if(bufArray.size() == 3 && !isDouble(bufArray[1]) && isDouble(bufArray[2]))
 				{
-				} //end if correct number of args, last arg is a double, second arg is not a double
+                    atmSession.sendP(sock,packet,"transfer," + bufArray[1] + "," + bufArray[2]);
+				    atmSession.listenP(sock,packet);
+                    split(std::string(packet), ',',tokens);
+                    if(tokens[0] == "denied")
+                    {
+                        cout << "Transaction denied.\n";
+                    } else {
+                        printf("Transaction complete!\nCurrent balance: %s\n", tokens[0].c_str());
+                    }
+                    atmSession.state = 5;
+                } //end if correct number of args, last arg is a double, second arg is not a double
 				else
 				{
-					cout << "Usage: transfer [target_account] [amount]";
+					cout << "Usage: transfer [target_account] [amount]\n";
 				} //end else in correct format
 			} //end else if command is transfer
 
@@ -221,7 +268,12 @@ int main(int argc, char* argv[])
                 cout << "Command '" << command << "' not recognized.\n";
             }
 
-            if(sendPacket)
+            if(atmSession.state == 5)
+            {
+                break;
+            }
+
+            /*if(sendPacket)
             {
                 //This block sends the message through the proxy to the bank. 
                 //There are two send messages - 1) packet length and 2) actual packet
@@ -229,7 +281,7 @@ int main(int argc, char* argv[])
                 cout << "Plen: " << length << endl;
                 if(sizeof(int) != send(sock, &length, sizeof(int), 0))
                 {
-                    printf("fail to send packet length\n");
+                    printf("fail to send packet mqlength\n");
                     break;
                 }
                 if(length != send(sock, (void*)packet, length, 0))
@@ -260,7 +312,7 @@ int main(int argc, char* argv[])
                 }
                 packet[length] = '\0';
                 printf("%s\n", packet);
-            }
+            }*/
         }
         else
         {
@@ -271,4 +323,82 @@ int main(int argc, char* argv[])
     //cleanup
     close(sock);
     return 0;
+}
+
+bool AtmSession::handshake(long int &csock)
+{
+    state = 0;
+
+    char packet[1024];
+
+    atmNonce = makeHash(randomString(128));
+
+    if(atmNonce == "")
+    {
+        atmNonce = "";
+        return false;
+    }
+
+    buildPacket(packet,"handshake," + atmNonce);
+    if(!sendPacket(csock, packet))
+    {
+        atmNonce = "";
+        return false;
+    }
+    state = 1;
+
+    if(!listenPacket(csock, packet))
+    {
+        atmNonce = "";
+        return false;
+    }
+
+    std::vector<std::string> tokens;
+
+    split(std::string(packet),',', tokens);
+
+    if(tokens.size() < 3 || tokens[0] != "handshakeResponse" || tokens[1].size() != 128 
+        || tokens[2].size() != 128 || tokens[1] != atmNonce)
+    {
+        atmNonce = "";
+        return false;
+    }
+
+    bankNonce = tokens[2];
+    state = 2;
+
+    return true;
+}
+
+bool AtmSession::sendP(long int &csock, void* packet, std::string command)
+{
+    atmNonce = makeHash(randomString(128));
+    command = command + "," + atmNonce + "," + bankNonce;
+    buildPacket((char*)packet, command);
+
+    return sendPacket(csock, packet);
+}
+bool AtmSession::listenP(long int &csock, char* packet)
+{
+    //TODO: Exception incase substr fails
+    if(!listenPacket(csock,packet))
+    {
+        return false;
+    }
+
+    std::string response(packet);
+
+    if(response.substr(0, 4) == "kill")
+    {
+        return false;
+    }
+
+    if(response.substr(response.size()-257, 128) != atmNonce)
+    {
+        return false;
+    }
+
+    bankNonce = response.substr(response.size()-128, 128);
+
+    return true;
 }

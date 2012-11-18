@@ -11,15 +11,15 @@ public:
 
 	//Transfer functions
 	bool tryTransfer(double funds, const Account* toAccount) const;
-	double Transfer(double funds, Account* toAccount);
+	bool Transfer(double funds, Account* toAccount);
 
 	//Withdraw functions
 	bool tryWithdraw(double funds) const;
-	double Withdraw(double funds);
+	bool Withdraw(double funds);
 
 	//Deposit functions
 	bool tryDeposit(double funds) const;
-	double Deposit(double funds);
+	bool Deposit(double funds);
 
 	//Other functions
 	const double getBalance(){ return this->balance; }
