@@ -20,7 +20,7 @@
 #include <termios.h>
 #include "util.h"
 #include "atm.h"
-
+#include <exception>
 
 using std::cout;
 using std::cin;
@@ -369,7 +369,7 @@ bool AtmSession::listenP(long int &csock, char* packet)
 
 			return true;
 	} //end try
-	catch (Exception e)
+	catch (std::exception e)
 	{
 			return false;
 	} //end catch

@@ -9,6 +9,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <fstream>
 #include "includes/cryptopp/sha.h"
 #include "includes/cryptopp/hex.h"
 #include "includes/cryptopp/aes.h"
@@ -178,6 +179,19 @@ bool isDouble(std::string questionable_string)
 
 void encryptPacket(void* packet, std::string key_file)
 {
+	std::string key;
+	std::ifstream input_key_file(key_file.c_str());
+
+	if(input_key_file.is_open())
+	{
+		input_key_file >> key;
+	} //end if file is open
+
+	CryptoPP::StringSource(key, true,
+					new CryptoPP::HexEncoder(
+							new CryptoPP::StringSink(key))
+					);	//end StringSource
+	input_key_file.close();
 } //end encryptPacket function
 
 void decryptPacket(void* packet)
