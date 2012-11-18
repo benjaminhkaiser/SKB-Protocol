@@ -83,7 +83,7 @@ bool Account::tryWithdraw(long double funds) const
 	}
 
 	//Let's not overflow now!
-	if(doubleOverflow(funds*-1,this->balance))
+	if(doubleOverflow(this->balance,funds*-1))
 	{
 		return false;
 	}
@@ -120,7 +120,7 @@ bool Account::tryDeposit(long double funds) const
 		return false;
 	}
 
-	if(!doubleOverflow(funds,this->balance))
+	if(!doubleOverflow(this->balance,funds))
 	{
 		return true;
 	} else {

@@ -63,8 +63,11 @@ std::string randomString(const int len)
 //Shouldn't we only need to check if it is between 0 and max?
 bool doubleOverflow(const double& x, const double& y)
 {
-	double max = std::numeric_limits<double>::max();
-	double min = std::numeric_limits<double>::min();
+	double max = std::numeric_limits<long double>::max();
+	double min = std::numeric_limits<long double>::min();
+
+	//x is generally the account balance
+	//y is generally the amount to change by
 
 	if(y > 0 && x > 0)
 	{
