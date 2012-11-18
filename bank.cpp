@@ -141,6 +141,16 @@ void* client_thread(void* arg)
         {
             continue;
         }
+
+        if(tokens[0] == "logout")
+        {
+            if(bankSession->account)
+            {
+                bankSession->account->inUse = false;
+            }
+            break;
+        }
+
         //Now we're compare what we go to what state we expect to be in
         switch(bankSession->state)
         {
@@ -186,6 +196,7 @@ void* client_thread(void* arg)
                         bankSession->error = true;
                         printf("[notice] Failed login!\n");
                     }
+                    bankSession->account->inUse = true;
                     bankSession->state = 5;
                     if(!bankSession->sendP(csock,packet, "ack"))
                     {
@@ -239,12 +250,19 @@ void* client_thread(void* arg)
                     sprintf(moneyStr,"%.2Lf",bankSession->account->getBalance());
                     bankSession->sendP(csock, packet, std::string(moneyStr));
                 }
+                bankSession->account->inUse = false;
+                bankSession->account = 0;
                 bankSession->state = 0;
                 break;
         }
         
         if(fatalError)
         {
+            if(bankSession->account)
+            {
+                bankSession->account->inUse = false;
+                bankSession->account = 0;
+            }
             break;
         }
     }

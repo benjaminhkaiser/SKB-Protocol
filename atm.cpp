@@ -138,8 +138,12 @@ int main(int argc, char* argv[])
             std::string command = bufArray[0];
                 
             // There exists a command, check the command
-            if(!strcmp(buf, "logout"))
+            if(((std::string) "logout") == command|| ((std::string) "exit") == command)
             {   
+                if(atmSession.state > 0)
+                {
+                    atmSession.sendP(sock,packet,"logout");
+                }
 				//TODO: Send logout message so that someone could log in at a different atm
                 //sendPacket = 1; // Send packet because valid command
                 break;
@@ -354,21 +358,21 @@ bool AtmSession::listenP(long int &csock, char* packet)
     }
 	try
     {
-			std::string response(packet);
+		std::string response(packet);
 
-			if(response.substr(0, 4) == "kill")
-			{
-				return false;
-			}
+		if(response.substr(0, 4) == "kill")
+		{
+			return false;
+		}
 
-			if(response.substr(response.size()-257, 128) != atmNonce)
-			{
-				return false;
-			}
+		if(response.substr(response.size()-257, 128) != atmNonce)
+		{
+			return false;
+		}
 
-			bankNonce = response.substr(response.size()-128, 128);
+		bankNonce = response.substr(response.size()-128, 128);
 
-			return true;
+		return true;
 	} //end try
 	catch (std::exception e)
 	{
