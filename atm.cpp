@@ -242,7 +242,12 @@ int main(int argc, char* argv[])
             } //end if command is withdraw
 			else if(((std::string) "transfer") == command && atmSession.state == 4)
 			{
-				if(bufArray.size() == 3 && !isDouble(bufArray[1]) && isDouble(bufArray[2]))
+				//If this command is entered correctly, then is_double
+				//should be 0 and transfer_value should be both positive and
+				//not 0
+				long double is_double = string_to_Double(bufArray[1]);
+				long double transfer_value = string_to_Double(bufArray[2]);
+				if(bufArray.size() == 3 && is_double == 0 && transfer_value > 0)
 				{
                     atmSession.sendP(sock,packet,"transfer," + bufArray[1] + "," + bufArray[2]);
 				    atmSession.listenP(sock,packet);

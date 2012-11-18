@@ -236,7 +236,7 @@ void* client_thread(void* arg)
                 else if(returnBalance)
                 {
                     char moneyStr[256];
-                    sprintf(moneyStr,"%.2f",bankSession->account->getBalance());
+                    sprintf(moneyStr,"%.2Lf",bankSession->account->getBalance());
                     bankSession->sendP(csock, packet, std::string(moneyStr));
                 }
                 bankSession->state = 0;
@@ -334,7 +334,7 @@ void* console_thread(void* arg)
                 printf("Invalid account\n");
                 continue;
             }
-            printf("Balance: %.2f\n", current_account->getBalance());
+            printf("Balance: %.2Lf\n", current_account->getBalance());
             continue;
         }
 
@@ -346,7 +346,7 @@ void* console_thread(void* arg)
                 continue;
             }
 
-            double amount = atof(tokens[2].c_str());
+            long double amount = atof(tokens[2].c_str());
 
             if(amount <= 0)
             {
@@ -363,12 +363,11 @@ void* console_thread(void* arg)
 
             if(current_account->Deposit(amount))
             {
-                double cur_balance = current_account->getBalance();
-                printf("Money deposited!\nNew balance: %.2f\n", cur_balance);
+                long double cur_balance = current_account->getBalance();
+                printf("Money deposited!\nNew balance: %.2Lf\n", cur_balance);
             } else {
                 printf("Error depositing money!\n");
             }
-
             continue;
         }
 

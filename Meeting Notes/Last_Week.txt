@@ -1,0 +1,5 @@
+TBD as of Final Week:
+1. Nonces
+2. AES
+3. Mutexes (Bool flags)
+4. Transfer

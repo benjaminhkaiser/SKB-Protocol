@@ -10,19 +10,19 @@ public:
 	Account();
 
 	//Transfer functions
-	bool tryTransfer(double funds, const Account* toAccount) const;
-	bool Transfer(double funds, Account* toAccount);
+	bool tryTransfer(long double funds, const Account* toAccount) const;
+	bool Transfer(long double funds, Account* toAccount);
 
 	//Withdraw functions
-	bool tryWithdraw(double funds) const;
-	bool Withdraw(double funds);
+	bool tryWithdraw(long double funds) const;
+	bool Withdraw(long double funds);
 
 	//Deposit functions
-	bool tryDeposit(double funds) const;
-	bool Deposit(double funds);
+	bool tryDeposit(long double funds) const;
+	bool Deposit(long double funds);
 
 	//Other functions
-	const double getBalance(){ return this->balance; }
+	const long double getBalance(){ return this->balance; }
 	const std::string getAccountHolder(){ return this->accountHolder; }
 	bool setPIN(const std::string& pin, const std::string& appSalt);
 	bool createAccount(const std::string& accountHolder, const int& accountNum, const std::string& pin, const std::string& appSalt);
@@ -34,8 +34,8 @@ private:
 	std::string salt;
 	std::string card;
 	int accountNum;
-	double balance;
-	double withdrawLimitRemaining;
+	long double balance;
+	long double withdrawLimitRemaining;
 	int transferAttemptsRemaining;
 	int failsRemaining;
 	bool locked;
