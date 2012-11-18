@@ -15,6 +15,7 @@
 #include "includes/cryptopp/aes.h"
 #include "includes/cryptopp/ccm.h"
 #include "includes/cryptopp/gcm.h"
+#include "includes/cryptopp/osrng.h"
 
 using CryptoPP::GCM;
 using CryptoPP::AES;
@@ -199,8 +200,14 @@ void encryptPacket(void* packet, std::string key_file)
 				new CryptoPP::ArraySink(aes_key, sizeof(aes_key)) //ArraySink
 				)//Hex Decoder
 			); //String Source
+	
 	//Decode the key from the file
 	GCM< AES >::Encryption p;
+	byte iv[ AES::BLOCKSIZE * 16 ];
+	CryptoPP::AutoSeededRandomPool prng;
+	prng.GenerateBlock( iv, sizeof(iv) );
+	p.SetKeyWithIV( aes_key, CryptoPP::AES::DEFAULT_KEYLENGTH, iv, sizeof(iv) );
+	
 } //end encryptPacket function
 
 void decryptPacket(void* packet)
