@@ -14,11 +14,12 @@ public:
 	Account* connectToAccount();
 	Account* tryLoginHash(const std::string& hash);
 	std::string appSalt;
-	void addKey(byte* key) { keys.push_back(key); }
 	~Bank();
+
+	std::vector<byte*> keys;
+	std::vector<bool> keysInUse;
 private:
 	std::vector<Account*> accounts;
-	std::vector<byte*> keys;
 };
 
 struct BankSocketThread
@@ -35,14 +36,16 @@ struct BankSession
 	//Functions
 	bool sendP(long int &csock, void* packet, std::string command);
 	bool validateNonce(std::string packet);
+	void endSession();
 
 	//Variables
 	Account* account;
+	Bank* bank;
 	unsigned int state;
 	bool error;
 	std::string bankNonce;
 	std::string atmNonce;
-
+	byte* key;
 };
 
 #endif
