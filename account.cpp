@@ -15,6 +15,7 @@ Account::Account()
 	failsRemaining = 3;
 	transferAttemptsRemaining = 3;
 	withdrawLimitRemaining = 1000;
+	depositLimitRemaining = 1000000000;
 	balance = 0;
 	accountNum = 0;
 	hash = "";
@@ -69,9 +70,14 @@ bool Account::Transfer(long double funds, Account* toAccount)
 /*
  * Withdraw
  */
-
+//Funds is what you're withdrawing
 bool Account::tryWithdraw(long double funds) const
 {
+	//We don't allow overdraft
+	if(this->balance - funds < 0)
+	{
+		return false;
+	}
 	if(funds < 0)
 	{
 		return false;
@@ -89,11 +95,7 @@ bool Account::tryWithdraw(long double funds) const
 		return false;
 	}
 
-	//We don't allow overdraft
-	if(this->balance - funds < 0)
-	{
-		return false;
-	}
+
 
 	return true;
 }
@@ -120,6 +122,10 @@ bool Account::tryDeposit(long double funds) const
 	{
 		return false;
 	}
+	
+	if(funds > this->depositLimitRemaining){
+		return false;
+	}
 
 	if(!doubleOverflow(this->balance,funds))
 	{
@@ -134,6 +140,7 @@ bool Account::Deposit(long double funds)
 	if(tryDeposit(funds))
 	{
 		this->balance += funds;
+		this->depositLimitRemaining -= funds;
 		return true;
 	}
 	return false;

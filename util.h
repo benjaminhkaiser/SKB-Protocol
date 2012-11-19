@@ -20,7 +20,7 @@ std::string to_string(int number);
 std::string to_string(double number);
 std::string randomString(const int len);
 long double string_to_Double(const std::string& input);
-bool doubleOverflow(const double& x, const double& y);
+bool doubleOverflow(const long double& x, const long double& y);
 int split(const std::string &s, char delim, std::vector<std::string> &elems);
 void buildPacket(char* packet, std::string command);
 bool sendPacket(long int &csock, void* packet);

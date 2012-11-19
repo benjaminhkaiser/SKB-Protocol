@@ -39,6 +39,7 @@ private:
 	int accountNum;
 	long double balance;
 	long double withdrawLimitRemaining;
+	long double depositLimitRemaining;
 	int transferAttemptsRemaining;
 	int failsRemaining;
 	bool locked;

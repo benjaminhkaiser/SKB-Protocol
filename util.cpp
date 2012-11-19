@@ -70,34 +70,45 @@ std::string randomString(const int len)
     return s;
 }
 //Shouldn't we only need to check if it is between 0 and max?
-bool doubleOverflow(const double& x, const double& y)
+bool doubleOverflow(const long double& x, const long double& y)
 {
-	double max = std::numeric_limits<long double>::max();
-	double min = std::numeric_limits<long double>::min();
-
-	//x is generally the account balance
-	//y is generally the amount to change by
-
-	if(y > 0 && x > 0)
+	long double max = std::numeric_limits<long double>::max();
+	long double min = std::numeric_limits<long double>::min();
+	
+	//x is the account balance
+	//y is the amount to change by
+	
+	//If adding funds to balance would make balance overflow
+	//above max
+	if(y > 0)
 	{
-		if(y <= max - x)
+		if(x + y >= max)
+		{
+			return true;
+		} //end if adding overflows
+		else
 		{
 			return false;
-		} else {
+		} //end else does not overflow
+	} //end if positive overflow
+	//If subtracting funds from balance would bring balance below min
+	else if(y < 0)
+	{
+		if(x - y <= min)
+		{
 			return true;
-		}
-	} else if(x < 0 && y < 0) { //why would both of these be negative?
-		if(y >= min - x)
+		} //end if subtracting overflows
+		else
 		{
 			return false;
-		} else {
-			return true;
-		}
-	} else {
+		} //end else does not overflow
+	} //end else if negative overflow
+	//Otherwise, y = 0 and that's not valid for what we're doing
+	else
+	{
 		return false;
-	}
+	} //end else
 }
-
 // This function returns a vector of strings, which is the prompt split by the delim.
 int split(const std::string &s, char delim, std::vector<std::string> &elems) 
 {
