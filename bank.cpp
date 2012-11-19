@@ -129,7 +129,7 @@ void* client_thread(void* arg)
         }
         
         //Temporary code for debugging: print received packet
-        printf("%s", packet);
+        //printf("%s", packet);
         printf("\n");
 
         //Parse the packet

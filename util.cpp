@@ -110,13 +110,21 @@ int split(const std::string &s, char delim, std::vector<std::string> &elems)
     return elems.size();
 }
 
+void padCommand(std::string &command){
+	//pad end of packet with '~' then 'a's
+	if (command.size() < 1022){ //1022 because buildPacket() has two '\0's
+		command += "~";
+	}
+	while(command.size() < 1022){
+		command += "a";
+	}
+}
+
 void buildPacket(char* packet, std::string command)
 {
 	packet[0] = '\0';
-    //Build out nonce here
-	
+	padCommand(command);
 	//Check if command overflows
-	//change 1023 to variable amount based on nonce once implemented
 	if(command.size() < 1023)
 	{
     	strcpy(packet, (command + '\0').c_str());
@@ -130,7 +138,7 @@ bool sendPacket(long int &csock, void* packet)
 	int length = 0;
 
 	length = strlen((char*)packet);
-	printf("Send packet length: %d\n", length);
+	//printf("Send packet length: %d\n", length);
 	if(sizeof(int) != send(csock, &length, sizeof(int), 0))
 	{
 	    printf("[error] fail to send packet length\n");
@@ -143,6 +151,16 @@ bool sendPacket(long int &csock, void* packet)
 	}
 
 	return true;
+}
+
+void unpadPacket(char* packet, int &length){
+	int i = length;	//start at end of packet
+	while (packet[i] != '~'){ 
+		packet[i] = '\0'; //remove all 'a's
+		i--;
+	}
+	packet[i] == '\0'; //remove '~'
+	length = i; //adjust length accordingly
 }
 
 //Listens for a packet and modifies the packet variable accordingly
@@ -165,6 +183,7 @@ bool listenPacket(long int &csock, char* packet)
 	    printf("[error] fail to read packet\n");
 	    return false;
 	}
+	unpadPacket(packet, length);
 	packet[length] = '\0';
 
 	return true;
@@ -194,8 +213,6 @@ void encryptPacket(void* packet, byte* aes_key)
 	CryptoPP::StringSource(plaintext, true,
 		new CryptoPP::AuthenticatedEncryptionFilter(p,
 			new CryptoPP::StringSink(ciphertext), false, 16));
-	std::cout << ciphertext;
-	
 } //end encryptPacket function
 
 void decryptPacket(void* packet)
