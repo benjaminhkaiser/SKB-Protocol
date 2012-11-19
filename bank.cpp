@@ -89,9 +89,7 @@ void* client_thread(void* arg)
     BankSocketThread* bankSocketThread = (BankSocketThread*) arg;
     Bank* bank = bankSocketThread->bank;
     BankSession* bankSession = new BankSession();
-    bankSession->bank = bank;
-    bankSession->state = 0;
-    bankSession->key = 0;
+    bankSession->state = 1;
 
     long int csock = (long int)*(bankSocketThread->csock);
     
@@ -100,58 +98,41 @@ void* client_thread(void* arg)
     //input loop
     int length;
     char packet[1024];
+    bool doSend = false;
     bool fatalError = false;
     std::vector<std::string> tokens;
     while(1)
     {
+        doSend = false;
         fatalError = false;
         tokens.clear();
-
+        
+        /*packet[0] = '\0';
+        //read the packet from the ATM
+        if(sizeof(int) != recv(csock, &length, sizeof(int), 0)){
+            break;
+        }
+        if(length >= 1024)
+        {
+            printf("packet too long\n");
+            break;
+        }
+        if(length != recv(csock, packet, length, 0))
+        {
+            printf("[bank] fail to read packet\n");
+            break;
+        }
+        packet[length] = '\0';*/
         if(!listenPacket(csock, packet))
         {
             break;
         }
-
-        if(!bankSession->key)
-        {
-            if(bankSession->state != 0)
-            {
-                printf("[error] Unexpectd state\n");
-                break;
-            }
-            for(unsigned int i = 0; i < bank->keys.size(); ++i)
-            {
-                if(bank->keysInUse[i])
-                {
-                    continue;
-                }
-                if(decryptPacket(packet,bank->keys[i])
-                    && std::string(packet).substr(0,9) == "handshake")
-                {
-                    bankSession->key = bank->keys[i];
-                    bank->keysInUse[i] = true;
-                    break;
-                }
-            }
-            if(!bankSession->key)
-            {
-                printf("[error] Key not found.\n");
-                break;
-            }
-        } else {
-            if(!decryptPacket(packet, bankSession->key))
-            {
-                printf("[error] Invalid key\n");
-                break;
-            }
-        }
         
         //Temporary code for debugging: print received packet
-        //printf("%s", packet);
         printf("\n");
-        //printf("%s\n", packet);
 
         //Parse the packet
+        //std::string strPacket = packet;
         split(std::string(packet),',', tokens);
 
         //We should get something, if not ignore this packet
@@ -162,7 +143,10 @@ void* client_thread(void* arg)
 
         if(tokens[0] == "logout")
         {
-            bankSession->endSession();
+            if(bankSession->account)
+            {
+                bankSession->account->inUse = false;
+            }
             break;
         }
 
@@ -182,7 +166,6 @@ void* client_thread(void* arg)
                         break;
                     }
                     buildPacket(packet, "handshakeResponse," + bankSession->atmNonce + "," + bankSession->bankNonce);
-                    encryptPacket(packet,bankSession->key);
                     if(!sendPacket(csock, packet))
                     {
                         printf("Unexpected error\n");
@@ -227,7 +210,7 @@ void* client_thread(void* arg)
                 bankSession->state = 4;
                 if(bankSession->error)
                 {
-                    returnBalance = false;
+                    //Just hold here
                 } 
                 else if(tokens.size() == 3 && tokens[0] == "balance")
                 {
@@ -238,7 +221,6 @@ void* client_thread(void* arg)
                     double amount = atof(tokens[1].c_str());
                     if(!bankSession->account->Withdraw(amount))
                     {
-                        printf("[error] Failed withdraw\n");
                         returnBalance = false;
                         bankSession->error = true;
                     }
@@ -251,7 +233,6 @@ void* client_thread(void* arg)
                     double amount = atof(tokens[2].c_str());
                     if(!bankSession->account->Transfer(amount, accountTo))
                     {
-                        printf("[error] Failed transfer\n");
                         returnBalance = false;
                         bankSession->error = true;
                     }
@@ -268,20 +249,23 @@ void* client_thread(void* arg)
                     sprintf(moneyStr,"%.2Lf",bankSession->account->getBalance());
                     bankSession->sendP(csock, packet, std::string(moneyStr));
                 }
-
-                //Reset back to initial state
-                bankSession->endSession();
-
+                bankSession->account->inUse = false;
+                bankSession->account = 0;
+                bankSession->state = 0;
                 break;
         }
         
         if(fatalError)
         {
-            bankSession->endSession();
+            if(bankSession->account)
+            {
+                bankSession->account->inUse = false;
+                bankSession->account = 0;
+            }
             break;
         }
     }
-    bankSession->endSession();
+
     printf("[bank] client ID #%ld disconnected\n", csock);
 
     close(csock);
@@ -295,12 +279,10 @@ void* console_thread(void* arg)
     Bank* bank = bankSocketThread->bank;
 
     //Let's generate our keys
-    for(unsigned int i = 1; i <= 50; ++i)
+    for(unsigned int i = 0; i < 50; ++i)
     {
         byte* key = new byte[CryptoPP::AES::DEFAULT_KEYLENGTH];
-        generateRandomKey(to_string((int)i),key, CryptoPP::AES::DEFAULT_KEYLENGTH);
-        bank->keys.push_back(key);
-        bank->keysInUse.push_back(false);
+        generateRandomKey(to_string((int)i),key, sizeof(key));
     }
 
     //Create Accounts
@@ -389,7 +371,9 @@ void* console_thread(void* arg)
             continue;
         }
 
-        //printf("%s\n", buf);        
+        //printf("%s", buf);
+        //printf("\n");
+        
     }
 }
 
@@ -438,57 +422,21 @@ Bank::~Bank()
 
 bool BankSession::sendP(long int &csock, void* packet, std::string command)
 {
-    if(!this->key)
-    {
-        return false;
-    }
     bankNonce = makeHash(randomString(128));
     command = command + "," + atmNonce + "," + bankNonce;
     buildPacket((char*)packet, command);
-    if(!encryptPacket((char*)packet,this->key))
-    {
-        return false;
-    }
 
     return sendPacket(csock, packet);
 }
 
 bool BankSession::validateNonce(std::string packet)
 {
-    try
-    {
-        if(packet.substr(packet.size()-128, 128) != bankNonce)
-        {
-            return false;
-        }
-        atmNonce = packet.substr(packet.size()-257, 128);
-    }
-    catch(std::exception e)
+    //TODO: Exception incase substr fails
+    if(packet.substr(packet.size()-128, 128) != bankNonce)
     {
         return false;
     }
-    
+    atmNonce = packet.substr(packet.size()-257, 128);
 
     return true;
-}
-
-void BankSession::endSession()
-{
-    if(this->account)
-    {
-        this->account->inUse = false;
-    }
-    this->account = 0;
-    if(this->key)
-    {
-        for(unsigned int i = 0; i < this->bank->keys.size(); ++i)
-        {
-            if(this->key == this->bank->keys[i])
-            {
-                this->bank->keysInUse[i] = false;
-            }
-        }
-    }
-    this->key = 0;
-    this->state = 0;
 }

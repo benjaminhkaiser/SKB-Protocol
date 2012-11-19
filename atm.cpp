@@ -119,16 +119,14 @@ int main(int argc, char* argv[])
 	}
 	input_file.close();
 
-	byte atm_key[CryptoPP::AES::DEFAULT_KEYLENGTH];
+	byte atm_key(CryptoPP::AES::DEFAULT_KEYLENGTH);
 
 	//assign to atmSessions    	
 	CryptoPP::StringSource(key, true,
 		new CryptoPP::HexDecoder(
-			new CryptoPP::ArraySink(atm_key,CryptoPP::AES::DEFAULT_KEYLENGTH)
-		)
-	);
-
-    atmSession.key = atm_key;
+			new CryptoPP::ArraySink(atmSession.key,sizeof(atm_key))
+			)
+		);
 
 	
 
@@ -150,6 +148,8 @@ int main(int argc, char* argv[])
         printf("atm> ");
         fgets(buf, 79, stdin);
         buf[strlen(buf)-1] = '\0';  //trim off trailing newline
+
+        //TODO: We need to get a nonce from the server.. and make sure the server is who we think it is
         
         // Parse data
         split((std::string) buf, ' ', bufArray);
@@ -166,6 +166,8 @@ int main(int argc, char* argv[])
                 {
                     atmSession.sendP(sock,packet,"logout");
                 }
+				//TODO: Send logout message so that someone could log in at a different atm
+                //sendPacket = 1; // Send packet because valid command
                 break;
             }
             else if(((std::string) "login") == command && atmSession.state == 0) //if command is 'login'
@@ -214,6 +216,7 @@ int main(int argc, char* argv[])
                         if(!atmSession.listenP(sock, packet) || std::string(packet).substr(0,3) != "ack")
                         {
                             cout << "Unexpected error.\n";
+                            cout << "Expected ack but got " << std::string(packet).substr(0,3) << "\n";
                             break;
                         }
                         atmSession.state = 4;
@@ -330,7 +333,6 @@ bool AtmSession::handshake(long int &csock)
     }
 
     buildPacket(packet,"handshake," + atmNonce);
-    encryptPacket(packet,this->key);
     if(!sendPacket(csock, packet))
     {
         atmNonce = "";
@@ -338,7 +340,7 @@ bool AtmSession::handshake(long int &csock)
     }
     state = 1;
 
-    if(!listenPacket(csock, packet) || !decryptPacket(packet,this->key))
+    if(!listenPacket(csock, packet))
     {
         atmNonce = "";
         return false;
@@ -367,16 +369,12 @@ bool AtmSession::sendP(long int &csock, void* packet, std::string command)
     atmNonce = makeHash(randomString(128));
     command = command + "," + atmNonce + "," + bankNonce;
     buildPacket((char*)packet, command);
-	encryptPacket((char*)packet, this->key);
+	encryptPacket(packet, this->key);
     return sendPacket(csock, packet);
 }
 bool AtmSession::listenP(long int &csock, char* packet)
 {
     if(!listenPacket(csock,packet))
-    {
-        return false;
-    }
-    if(!this->key || !decryptPacket((char*)packet,this->key))
     {
         return false;
     }
