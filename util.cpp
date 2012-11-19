@@ -211,16 +211,6 @@ bool encryptPacket(char* packet, byte* aes_key)
 	{
 		std::string plaintext(packet);
 
-	//Decode the key from the file
-	GCM< AES >::Encryption p;
-	byte iv[ AES::BLOCKSIZE * 16 ];
-	CryptoPP::AutoSeededRandomPool prng;
-	prng.GenerateBlock( iv, sizeof(iv) );
-	p.SetKeyWithIV( aes_key, CryptoPP::AES::DEFAULT_KEYLENGTH, iv, sizeof(iv) );
-	std::string ciphertext;
-	CryptoPP::StringSource(plaintext, true,
-		new CryptoPP::AuthenticatedEncryptionFilter(p,
-			new CryptoPP::StringSink(ciphertext), false, 16));
 		//Decode the key from the file
 		GCM< AES >::Encryption p;
 		//iv will help us with keying out cipher
