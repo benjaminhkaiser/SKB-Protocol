@@ -119,12 +119,12 @@ int main(int argc, char* argv[])
 	}
 	input_file.close();
 
-	byte atm_key(CryptoPP::AES::DEFAULT_KEYLENGTH);
+	byte atm_key[CryptoPP::AES::DEFAULT_KEYLENGTH];
 
 	//assign to atmSessions    	
 	CryptoPP::StringSource(key, true,
 		new CryptoPP::HexDecoder(
-			new CryptoPP::ArraySink(atmSession.key,sizeof(atm_key))
+			new CryptoPP::ArraySink(atmSession.key,CryptoPP::AES::DEFAULT_KEYLENGTH)
 			)
 		);
 
