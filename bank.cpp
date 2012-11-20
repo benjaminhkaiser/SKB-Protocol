@@ -446,6 +446,10 @@ bool BankSession::sendP(long int &csock, void* packet, std::string command)
 
     bankNonce = makeHash(randomString(128));
     command = command + "," + atmNonce + "," + bankNonce;
+    if(command.size() >= 460)
+    {
+        return false;
+    }
     buildPacket((char*)packet, command);
     if(!encryptPacket((char*)packet,this->key))
     {
