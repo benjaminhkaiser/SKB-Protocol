@@ -152,10 +152,17 @@ int main(int argc, char* argv[])
         // Parse data
         split((std::string) buf, ' ', bufArray);
 
+        if(std::string(buf).size() >= 204)
+        {
+            printf("Invalid input. Try again.\n");
+            continue;
+        }
+
         //input parsing
         if(bufArray.size() >= 1 && ((std::string) "") != bufArray[0])
         {
             std::string command = bufArray[0];
+
                 
             // There exists a command, check the command
             if(((std::string) "logout") == command|| ((std::string) "exit") == command)
