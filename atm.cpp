@@ -124,9 +124,10 @@ int main(int argc, char* argv[])
 	//assign to atmSessions    	
 	CryptoPP::StringSource(key, true,
 		new CryptoPP::HexDecoder(
-			new CryptoPP::ArraySink(atmSession.key,CryptoPP::AES::DEFAULT_KEYLENGTH)
+			new CryptoPP::ArraySink(atm_key,CryptoPP::AES::DEFAULT_KEYLENGTH)
 			)
 		);
+    atmSession.key = atm_key;
 
 	
 
