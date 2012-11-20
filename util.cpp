@@ -17,6 +17,13 @@
 #include "includes/cryptopp/gcm.h"
 #include "includes/cryptopp/osrng.h"
 
+#ifdef LINUX
+#include <unistd.h>
+#endif
+#ifdef WINDOWS
+#include <windows.h>
+#endif
+
 using CryptoPP::GCM;
 using CryptoPP::AES;
 using CryptoPP::CCM;
@@ -153,9 +160,22 @@ void buildPacket(char* packet, std::string command)
 	} //end if command does not overflow
 
 }
+
+void sleepTime(unsigned int sleepMS){
+	#ifdef LINUX
+		usleep(sleepMS%1000000); //usleep takes microseconds
+	#endif
+	#ifdef WINDOWS
+		Sleep(sleepMS%1000); //Sleep takes milliseconds
+	#endif
+}
+
 //Takes the socket and packet and sends the packet
 bool sendPacket(long int &csock, void* packet)
 {
+	CryptoPP::AutoSeededRandomPool prng;
+	sleepTime(prng.GenerateWord32()); //wait for random amount of time
+
 	int length = 0;
 
 	length = strlen((char*)packet);
