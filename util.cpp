@@ -139,11 +139,13 @@ int split(const std::string &s, char delim, std::vector<std::string> &elems)
 }
 
 void padCommand(std::string &command){
+	//return;
 	//pad end of packet with '~' then 'a's
-	if (command.size() < 1022){ //1022 because buildPacket() has two '\0's
+	//printf("Before pad size: %d\n", (int)command.size());
+	if (command.size() < 460){ //1022 because buildPacket() has two '\0's
 		command += "~";
 	}
-	while(command.size() < 1022){
+	while(command.size() < 460){
 		command += "a";
 	}
 }
@@ -151,9 +153,10 @@ void padCommand(std::string &command){
 void buildPacket(char* packet, std::string command)
 {
 	packet[0] = '\0';
-	//padCommand(command);
+	padCommand(command);
+	//printf("Post padding command size: %d\n", (int)command.size());
 	//Check if command overflows
-	if(command.size() < 1023)
+	if(command.size() <= 1022)
 	{
     	strcpy(packet, (command + '\0').c_str());
     	packet[command.size()] = '\0';
@@ -179,6 +182,7 @@ bool sendPacket(long int &csock, void* packet)
 	int length = 0;
 
 	length = strlen((char*)packet);
+	//printf("Packet size: %d\n", length);
 	if(sizeof(int) != send(csock, &length, sizeof(int), 0))
 	{
 	    printf("[error] fail to send packet length\n");
@@ -193,14 +197,42 @@ bool sendPacket(long int &csock, void* packet)
 	return true;
 }
 
-void unpadPacket(char* packet, int &length){
-	int i = length;	//start at end of packet
+void unpadPacket(std::string &plaintext)
+{
+	bool markerFound = false;
+	int position = -1;
+	for(unsigned int i = 0; i < plaintext.size(); ++i)
+	{
+		if(plaintext[i] == '~')
+		{
+			if(markerFound)
+			{
+				markerFound = false;
+				position = -1;
+			} else {
+				markerFound = true;
+				position = i;
+			}
+			continue;
+		}
+		if(plaintext[i] != 'a' && markerFound)
+		{
+			markerFound = false;
+			position = -1;
+		}
+	}
+	if(position > 0)
+	{
+		plaintext = plaintext.substr(0,position);
+	}
+	return;
+	/*int i = length;	//start at end of packet
 	while (packet[i] != '~'){ 
 		packet[i] = '\0'; //remove all 'a's
 		i--;
 	}
-	packet[i] == '\0'; //remove '~'
-	length = i; //adjust length accordingly
+	packet[i] = '\0'; //remove '~'
+	length = i; //adjust length accordingly*/
 }
 
 //Listens for a packet and modifies the packet variable accordingly
@@ -223,7 +255,6 @@ bool listenPacket(long int &csock, char* packet)
 	    printf("[error] fail to read packet\n");
 	    return false;
 	}
-	//unpadPacket(packet, length);
 	packet[length] = '\0';
 
 	return true;
@@ -241,12 +272,6 @@ bool isDouble(std::string questionable_string)
 
 bool encryptPacket(char* packet, byte* aes_key)
 {
-	std::string plainkey;
-	CryptoPP::StringSource(aes_key, CryptoPP::AES::DEFAULT_KEYLENGTH, true,
-		new CryptoPP::HexEncoder(
-			new CryptoPP::StringSink(plainkey)
-		) // HexEncoder
-	);
 	try
 	{
 		std::string plaintext(packet);
@@ -289,6 +314,7 @@ bool encryptPacket(char* packet, byte* aes_key)
 		//replace the packet with the econded ciphertext
 		strcpy(packet, (encoded_iv+encodedCipher).c_str());
 		packet[(encoded_iv+encodedCipher).size()] = '\0';
+		//printf("Encrypted packet size: %d\n", (int)strlen(packet));
 	}
 	catch(std::exception e)
 	{
@@ -323,16 +349,18 @@ bool decryptPacket(char* packet, byte* aes_key)
 
 		GCM< AES >::Decryption d;
 		d.SetKeyWithIV( aes_key, CryptoPP::AES::DEFAULT_KEYLENGTH, iv, sizeof(iv));
-
+		
 		//Decrypt the ciphertext into plaintext
 		std::string plaintext;
-		CryptoPP::StringSource s(ciphertext, true,
+	    CryptoPP::StringSource s(ciphertext, true, 
 			new CryptoPP::AuthenticatedDecryptionFilter(d,
 				new CryptoPP::StringSink(plaintext)
 			) // StreamTransformationFilter
 		);
 
 		//Replace the packet with the plaintext
+		unpadPacket(plaintext);
+		//printf("Plaintext: %s\n", plaintext.c_str());
 		strcpy(packet, plaintext.c_str());
 		packet[plaintext.size()] = '\0';
 	}
@@ -343,6 +371,7 @@ bool decryptPacket(char* packet, byte* aes_key)
 
 	return true;
 } //end decryptPacket function
+
 void generateRandomKey(std::string name, byte* key, long unsigned int length)
 {
 	CryptoPP::AutoSeededRandomPool prng;

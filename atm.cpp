@@ -107,6 +107,7 @@ int main(int argc, char* argv[])
     }
 
     AtmSession atmSession = AtmSession();
+    atmSession.key = 0;
     
 	//construct filename from command-line argument
 	std::string filename = "keys/" + std::string(argv[2]) + ".key";	
@@ -127,9 +128,7 @@ int main(int argc, char* argv[])
 			new CryptoPP::ArraySink(atm_key,CryptoPP::AES::DEFAULT_KEYLENGTH)
 		)
 	);
-    atmSession.key = atm_key;
-
-	
+    atmSession.key = atm_key;	
 
 	//input loop   
     while(1)

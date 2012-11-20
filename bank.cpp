@@ -112,12 +112,11 @@ void* client_thread(void* arg)
             printf("[bank] fail to read packet\n");
             break;
         }
-
         if(!bankSession->key)
         {
             if(bankSession->state != 0)
             {
-                printf("[error] Unexpectd state\n");
+                printf("[error] Unexpected state\n");
                 break;
             }
             for(unsigned int i = 0; i < bank->keys.size(); ++i)
@@ -298,7 +297,7 @@ void* console_thread(void* arg)
     Bank* bank = bankSocketThread->bank;
 
     //Let's generate our keys
-    for(unsigned int i = i; i < 50; ++i)
+    for(unsigned int i = 1; i <= 50; ++i)
     {
         byte* key = new byte[CryptoPP::AES::DEFAULT_KEYLENGTH];
         generateRandomKey(to_string((int)i),key, CryptoPP::AES::DEFAULT_KEYLENGTH);
