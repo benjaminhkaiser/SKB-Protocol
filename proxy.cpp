@@ -119,8 +119,6 @@ void* client_thread(void* arg)
 			break;
 		}
 		
-		//TODO: tamper with packet going from ATM to bank
-		
 		//forward packet to bank
 		if(sizeof(int) != send(bsock, &length, sizeof(int), 0))
 		{

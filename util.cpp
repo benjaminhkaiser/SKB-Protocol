@@ -179,7 +179,7 @@ bool sendPacket(long int &csock, void* packet)
 	int length = 0;
 
 	length = strlen((char*)packet);
-	//printf("Send packet length: %d\n", length);
+	
 	if(sizeof(int) != send(csock, &length, sizeof(int), 0))
 	{
 	    printf("[error] fail to send packet length\n");
