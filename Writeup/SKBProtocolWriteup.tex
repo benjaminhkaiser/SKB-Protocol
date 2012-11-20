@@ -1,0 +1,140 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{color}
+\usepackage{listings}
+\usepackage[hmargin=3cm,vmargin=3.5cm]{geometry}
+\definecolor{Brown}{cmyk}{0,0.81,1,0.60}
+\definecolor{OliveGreen}{cmyk}{0.64,0,0.95,0.40}
+\definecolor{CadetBlue}{cmyk}{0.62,0.57,0.23,0}
+
+\author{Samuel Rhody, Kevin O'Connor, and Benjamin Kaiser}
+\title{Cryptography \& Network Security I Project \ SKB Protocol}
+
+\begin{document}
+
+\lstset{ %
+language=C++,                % choose the language of the code
+basicstyle=\footnotesize,       % the size of the fonts that are used for the code
+backgroundcolor=\color{white},  % choose the background color.
+showspaces=false,               % show spaces adding particular underscores
+showstringspaces=false,         % underline spaces within strings
+showtabs=false,                 % show tabs within strings adding particular underscores
+tabsize=2,          % sets default tabsize to 2 spaces
+captionpos=b,           % sets the caption-position to bottom
+breaklines=true,        % sets automatic line breaking
+breakatwhitespace=false,    % sets if automatic breaks should only happen at whitespace
+escapeinside={\%*}{*)}          % if you want to add a comment within your code
+}
+
+\maketitle{}
+
+\section{Library}
+
+The library we used for our implementation is Crypto++. Documentation is available at\\
+http://www.cryptopp.com/docs/ref/. For a list of the specific files we included, see util.cpp:13-18 or below:\\
+
+\begin{lstlisting}
+#include "includes/cryptopp/sha.h"
+#include "includes/cryptopp/hex.h"
+#include "includes/cryptopp/aes.h"
+#include "includes/cryptopp/ccm.h"
+#include "includes/cryptopp/gcm.h"
+#include "includes/cryptopp/osrng.h"
+\end{lstlisting}
+
+\section{Compiling from Source and Launching}
+
+The makefile contains all necessary commands to compile from source, although compilation will require a working install of Crypto++. Executables for the Bank, ATM, and Proxy have all been provided as well. \\
+
+To launch the interface, first run the Bank and Proxy files. Bank takes a single argument: a port number to connect to the proxy. Proxy takes two arguments: the port the ATM will connect to and the port the Bank will connect to. ATM takes two arguments: the port it will connect to the Proxy through and an ATM number, 1 through 50. These numbers represent individual physical ATMs. If you would like to connect multiple ATMs, you must use different ATM numbers.\\
+
+A usage example follows (execute each command in a separate terminal window):\\
+
+\begin{lstlisting}
+./bank 4444
+./proxy 6666 4444
+./atm 6666 1
+\end{lstlisting}
+
+\section{Executing Transactions}
+
+The ATM is equipped with the following transactions: login, logout, balance, withdraw, transfer. The Bank is equipped with the following transactions: balance, deposit.
+
+\subsection{ATM Commands}
+
+The login command accepts one argument: the username of the account to be logged in to. It searches for a matching .card file, then prompts the user for the PIN, which is six digits. The PIN is masked with asterixes during input. The accounts and PINs are as follows:\\
+
+\begin{lstlisting}
+Username		  PIN		Initial Balance
+	alice			123456		$100.00
+	bob				234567		$50.00
+	eve				345678		$0.00
+\end{lstlisting}
+
+If the login fails for any reason (invalid user or invalid PIN), the user will still be allowed to proceed, but at the end of their transaction will get a "transaction denied" error. This is to avoid leaking any information about the accounts.\\
+
+If a login is attempted with a valid user but invalid PIN three times on the same user, the user's account will be locked by the bank. This can only be cleared by resetting the bank server - something we assume realistic adversaries would not be able to do.\\
+
+The logout command terminates the ATM process immediately.\\
+
+The balance command takes no arguments and returns the current balance of the logged-in user. The user is then logged out.\\
+
+The withdraw command takes one argument: the amount to be withdrawn. If the argument is a valid amount, the account balance is deducted by that amount and the new balance is printed. If the argument is invalid, the user gets a "transaction denied" error. The user is logged out at the end of this command.\\
+
+The transfer command takes two arguments: the account to be transferred to and the amount to be transfered. If either argument is invalid (arg1 is not a valid account or arg2 is an invalid amount), the user gets a "transaction denied" error. The user is logged out at the end of this command.
+
+\subsection{Bank Commands}
+
+The balance command takes one argument: the username of the account in question. It returns the current balance of that user.\\
+
+The deposit command takes two arguments: the username of the account to deposit to and the amount to deposit. If both arguments are valid, the amount is deposited into the account.\\
+
+\section{Communications \& Packet Handling}
+
+Communications between the ATM and Bank are shown in the table below. Nonces are referred to as $N_b$ for the Bank and $N_a$ for the ATM. The message is referred to as $M$. Login information is referred to as $L$. Hashing is referred to as $H()$. Return messages are referred to as $r$.\\
+
+\begin{tabular}{|c|ccc|}
+	\hline
+Step &  ATM  & Direction & Bank \\
+	\hline
+1   & $getNonce()$ & $\rightarrow$ & Generate $N_b$ \& create session  \\\\
+2   & Store $N_b$ & $\leftarrow$ & $E(N_b)$  \\\\
+3   & $E_x(L|N_a|H(N_a + N_b))$ & $\rightarrow$ & $D_x(M)$, $validateNonce()$,\\
+	& & & $validateLogin(L)$ \\\\
+4   & $D_x(L|N_b)$, $validateNonce()$ & $\leftarrow$ & $Generate N_b$, $E_x(M|N_b|H(N_a+N_b))$ \\  & == "I Got That" & &\\\\
+5   & Generate $N_a$, & $\rightarrow$ & $D_x(M)$, $validateNonce()$, \\
+	& command = $E_x(M|N_a|H(N_a+N_b))$ & & $executeCommand()$, return r\\\\
+6   & $D_x(L|N_b)$ and print r & $\leftarrow$ & Generate $N_b$, \\
+	& & & $E_x(r|N_b|H(N_a+N_b))$, kill session\\
+	\hline
+\end{tabular}
+
+{\footnotesize Table 3.1: Communications between ATM and Bank}\\
+
+During this whole transaction process, both the Bank and the ATM are keeping track of their state. The states are as follows:\\
+
+\begin{tabular}{|c|c|}
+	\hline
+Num & State\\
+	\hline
+0 & ATM requests. initial nonce from the bank and the two handshake.\\
+1 & Bank sends back a nonce\\
+2 & ATM sends login information\\
+3 & Bank sends an ACK\\
+4 & ATM sends a valid command for the bank\\
+5 & Bank replies with the response to command or the generic error message\\
+	\hline
+\end{tabular}
+
+{\footnotesize Table 3.2: List of states that exist during transactions}\\
+
+After the fifth state, both the ATM and the Bank go back to state 0. At any point, the Bank can send a kill message to the ATM that will terminate the transaction and send both back to state 0.
+
+\section{Encryption, Padding, and Delays}
+
+Before being sent, all packets are padded to length 1022, encrypted by AES, then delayed by a random amount of time (less than 1 second) before being sent.  
+
+\end{document}
