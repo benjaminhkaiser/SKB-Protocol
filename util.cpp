@@ -55,21 +55,31 @@ std::string to_string(double number)
    ss << number;
    return ss.str();
 }
-
-std::string randomString(const int len)
+//Function generates a random alphanumeric string of length len
+std::string randomString(const unsigned int len)
 {
     static const char alphanum[] =
         "0123456789"
         "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
         "abcdefghijklmnopqrstuvwxyz";
-    std::string s = "";
+
+	CryptoPP::AutoSeededRandomPool prng;
+	std::string s = "";
+
+	//When adding each letter, generate a new word32, 
+	//then compute it modulo alphanum's size - 1
+	for(unsigned int i = 0; i < len; ++i)
+	{
+		s += alphanum[prng.GenerateWord32() % (sizeof(alphanum) - 1)];
+	} //end for generate random string
+
+    /*std::string s = "";
     for (int i = 0; i < len; ++i) {
         s += alphanum[rand() % (sizeof(alphanum) - 1)];
     }
-
+	*/
     return s;
 }
-//Shouldn't we only need to check if it is between 0 and max?
 bool doubleOverflow(const long double& x, const long double& y)
 {
 	long double max = std::numeric_limits<long double>::max();

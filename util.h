@@ -18,7 +18,7 @@
 std::string makeHash(const std::string& input);
 std::string to_string(int number);
 std::string to_string(double number);
-std::string randomString(const int len);
+std::string randomString(const unsigned int len);
 long double string_to_Double(const std::string& input);
 bool doubleOverflow(const long double& x, const long double& y);
 int split(const std::string &s, char delim, std::vector<std::string> &elems);
