@@ -125,8 +125,8 @@ int main(int argc, char* argv[])
 	CryptoPP::StringSource(key, true,
 		new CryptoPP::HexDecoder(
 			new CryptoPP::ArraySink(atm_key,CryptoPP::AES::DEFAULT_KEYLENGTH)
-			)
-		);
+		)
+	);
     atmSession.key = atm_key;
 
 	
@@ -219,7 +219,7 @@ int main(int argc, char* argv[])
                             break;
                         }
                         atmSession.state = 4;
-                        cout << "All logged in!\n";
+                        //cout << "All logged in!\n";
                         //strcpy(packet,(command + ',' + accountHash + '\0').c_str());
                     }
                     else
@@ -322,7 +322,6 @@ bool AtmSession::handshake(long int &csock)
     state = 0;
 
     char packet[1024];
-
     atmNonce = makeHash(randomString(128));
 
     if(atmNonce == "")
@@ -330,8 +329,16 @@ bool AtmSession::handshake(long int &csock)
         atmNonce = "";
         return false;
     }
-
     buildPacket(packet,"handshake," + atmNonce);
+    if(!this->key)
+    {
+        return false;
+    }
+    if(!encryptPacket(packet,this->key))
+    {
+        atmNonce = "";
+        return false;
+    }
     if(!sendPacket(csock, packet))
     {
         atmNonce = "";
@@ -344,6 +351,7 @@ bool AtmSession::handshake(long int &csock)
         atmNonce = "";
         return false;
     }
+    decryptPacket((char*)packet, this->key);
 
     std::vector<std::string> tokens;
 
@@ -368,12 +376,15 @@ bool AtmSession::sendP(long int &csock, void* packet, std::string command)
     atmNonce = makeHash(randomString(128));
     command = command + "," + atmNonce + "," + bankNonce;
     buildPacket((char*)packet, command);
-	encryptPacket(packet, this->key);
+	if(!encryptPacket((char*)packet, this->key))
+    {
+        return false;
+    }
     return sendPacket(csock, packet);
 }
 bool AtmSession::listenP(long int &csock, char* packet)
 {
-    if(!listenPacket(csock,packet))
+    if(!listenPacket(csock,packet) || !decryptPacket((char*)packet,this->key))
     {
         return false;
     }

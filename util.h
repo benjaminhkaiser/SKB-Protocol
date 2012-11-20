@@ -26,7 +26,7 @@ void buildPacket(char* packet, std::string command);
 bool sendPacket(long int &csock, void* packet);
 bool listenPacket(long int &csock, char* packet);
 bool isDouble(std::string questionable_string);
-void encryptPacket(void* packet, byte* aes_key);
-void decryptPacket(void* packet);
+bool encryptPacket(char* packet, byte* aes_key);
+bool decryptPacket(char* packet, byte* aes_key);
 void generateRandomKey(std::string name, byte* key, long unsigned int length);
 #endif
