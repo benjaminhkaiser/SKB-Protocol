@@ -275,24 +275,27 @@ int main(int argc, char* argv[])
             } //end if command is withdraw
 			else if(((std::string) "transfer") == command && atmSession.state == 4)
 			{
-				//If this command is entered correctly, then is_double
-				//should be 0 and transfer_value should be both positive and
-				//not 0
-				long double is_double = string_to_Double(bufArray[1]);
-				long double transfer_value = string_to_Double(bufArray[2]);
-				if(bufArray.size() == 3 && is_double == 0 && transfer_value > 0)
+				if(bufArray.size() == 3)
 				{
-                    atmSession.sendP(sock,packet,"transfer," + bufArray[1] + "," + bufArray[2]);
-				    atmSession.listenP(sock,packet);
-                    split(std::string(packet), ',',tokens);
-                    if(tokens[0] == "denied")
-                    {
-                        cout << "Transaction denied.\n";
-                    } else {
-                        printf("Transaction complete!\nCurrent balance: %s\n", tokens[0].c_str());
-                    }
-                    atmSession.state = 5;
-                } //end if correct number of args, last arg is a double, second arg is not a double
+					//If this command is entered correctly, then is_double
+					//should be 0 and transfer_value should be both positive and
+					//not 0
+					long double is_double = string_to_Double(bufArray[1]);
+					long double transfer_value = string_to_Double(bufArray[2]);
+					if(is_double == 0 && transfer_value > 0)
+					{
+						atmSession.sendP(sock,packet,"transfer," + bufArray[1] + "," + bufArray[2]);
+						atmSession.listenP(sock,packet);
+						split(std::string(packet), ',',tokens);
+						if(tokens[0] == "denied")
+						{
+							cout << "Transaction denied.\n";
+						} else {
+							printf("Transaction complete!\nCurrent balance: %s\n", tokens[0].c_str());
+						}
+						atmSession.state = 5;
+					} //end if correct number of args, last arg is a double, second arg is not a double
+				} //end if correct number of arguments
 				else
 				{
 					cout << "Usage: transfer [target_account] [amount]\n";
