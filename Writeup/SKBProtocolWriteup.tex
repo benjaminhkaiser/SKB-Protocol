@@ -92,7 +92,7 @@ The balance command takes one argument: the username of the account in question.
 
 The deposit command takes two arguments: the username of the account to deposit to and the amount to deposit. If both arguments are valid, the amount is deposited into the account.\\
 
-\section{Communications \& Packet Handling}
+\section{Communications, Nonces, \& Packet Handling}
 
 Communications between the ATM and Bank are shown in the table below. Nonces are referred to as $N_b$ for the Bank and $N_a$ for the ATM. The message is referred to as $M$. Login information is referred to as $L$. Hashing is referred to as $H()$. Return messages are referred to as $r$.\\
 
@@ -120,7 +120,7 @@ During this whole transaction process, both the Bank and the ATM are keeping tra
 	\hline
 Num & State\\
 	\hline
-0 & ATM requests. initial nonce from the bank and the two handshake.\\
+0 & ATM requests initial nonce from the bank and the two handshake.\\
 1 & Bank sends back a nonce\\
 2 & ATM sends login information\\
 3 & Bank sends an ACK\\
@@ -133,7 +133,7 @@ Num & State\\
 
 After the fifth state, both the ATM and the Bank go back to state 0. At any point, the Bank can send a kill message to the ATM that will terminate the transaction and send both back to state 0.
 
-\section{Padding, Encryption, and Delays}
+\subsection{Padding, Encryption, and Delays}
 
 All packets sent are 984 bytes. The maximum that could be sent is 1024 bytes, but because AES is a block cipher, 984 is the largest encrypted block less than 1024. Users input commands no larger than 204 bytes which are then compiled into messages and padded to a length no greater than 460 bytes. These packets are encrypted by AES, then sent after a random time delay no greater than one second (to thwart timing attacks).
 
