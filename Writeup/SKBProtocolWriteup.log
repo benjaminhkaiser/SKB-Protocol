@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-2.4-1.40.13 (TeX Live 2012/Debian) (format=pdflatex 2012.11.20)  20 NOV 2012 15:18
+This is pdfTeX, Version 3.1415926-2.4-1.40.13 (TeX Live 2012/Debian) (format=pdflatex 2012.11.20)  21 NOV 2012 10:40
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -384,7 +384,7 @@ Package: ifxetex 2010/09/12 v0.6 Provides ifxetex conditional
 \Gm@layoutvoffset=\dimen123
 \Gm@dimlist=\toks23
 )
-No file SKBProtocolWriteup.aux.
+(./SKBProtocolWriteup.aux)
 \openout1 = `SKBProtocolWriteup.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 16.
@@ -399,6 +399,7 @@ LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 16.
 LaTeX Font Info:    ... okay on input line 16.
 LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 16.
 LaTeX Font Info:    ... okay on input line 16.
+
 (/usr/share/texlive/texmf-dist/tex/context/base/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
 \scratchcounter=\count111
@@ -556,8 +557,8 @@ Underfull \hbox (badness 10000) in paragraph at lines 132--133
 
 [3] (./SKBProtocolWriteup.aux) ) 
 Here is how much of TeX's memory you used:
- 4395 strings out of 495059
- 55847 string characters out of 3182029
+ 4397 strings out of 495059
+ 55893 string characters out of 3182029
  159756 words of memory out of 3000000
  7543 multiletter control sequences out of 15000+200000
  11504 words of font info for 45 fonts, out of 3000000 for 9000
@@ -572,7 +573,7 @@ m/cmmi10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi
 are/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr17.pfb></usr/share/tex
 live/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/share/texlive/tex
 mf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb>
-Output written on SKBProtocolWriteup.pdf (3 pages, 120421 bytes).
+Output written on SKBProtocolWriteup.pdf (3 pages, 121126 bytes).
 PDF statistics:
  50 PDF objects out of 1000 (max. 8388607)
  35 compressed objects within 1 object stream

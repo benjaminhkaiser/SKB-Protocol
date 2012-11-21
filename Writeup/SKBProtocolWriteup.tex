@@ -133,8 +133,9 @@ Num & State\\
 
 After the fifth state, both the ATM and the Bank go back to state 0. At any point, the Bank can send a kill message to the ATM that will terminate the transaction and send both back to state 0.
 
-\section{Encryption, Padding, and Delays}
+\section{Padding, Encryption, and Delays}
 
-Before being sent, all packets are padded to length 1022, encrypted by AES, then delayed by a random amount of time (less than 1 second) before being sent.  
+All packets sent are 984 bytes. The maximum that could be sent is 1024 bytes, but because AES is a block cipher, 984 is the largest encrypted block less than 1024. Users input commands no larger than 204 bytes which are then compiled into messages and padded to a length no greater than 460 bytes. These packets are encrypted by AES, then sent after a random time delay no greater than one second (to thwart timing attacks).
+
 
 \end{document}
