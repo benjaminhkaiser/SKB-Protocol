@@ -1,4 +1,4 @@
-CC=g++
+CC=g++ -m32
 CFLAGS=-I. -lcryptopp -lpthread
 
 all:
