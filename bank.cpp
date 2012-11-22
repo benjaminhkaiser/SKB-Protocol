@@ -211,7 +211,7 @@ void* client_thread(void* arg)
                         //Failed login
                         //TODO Blacklist hash
                         bankSession->error = true;
-                        printf("[notice] Failed login!\n");
+                        //printf("[notice] Failed login!\n");
                     }
                     bankSession->account->inUse = true;
                     bankSession->state = 5;
